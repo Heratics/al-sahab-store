@@ -112,11 +112,11 @@ export function Hero() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-bold text-foreground leading-tight">Premium Quality</p>
+                  <p className="font-bold text-foreground leading-tight">{t('Premium Quality', 'جودة عالية')}</p>
                   <p className="arabic-text text-sm text-muted-foreground">جودة عالية</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">Curated selection of the best home products in Aqaba.</p>
+              <p className="text-sm text-muted-foreground">{t('Curated selection of the best home products in Aqaba.', 'تشكيلة مختارة من افضل منتجات المنزل في العقبة.')}</p>
             </motion.div>
           </div>
 

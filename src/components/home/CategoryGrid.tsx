@@ -111,7 +111,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
                 <h4 className="text-xl font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{isArabic ? cat.nameAr : cat.nameEn}</h4>
                 <h5 className="arabic-text text-lg text-muted-foreground mb-3">{isArabic ? cat.nameEn : cat.nameAr}</h5>
                 
-                <p className="text-sm text-muted-foreground mb-6 grow">{cat.description}</p>
+                <p className="text-sm text-muted-foreground mb-6 grow">{isArabic ? (cat.descriptionAr || cat.description) : cat.description}</p>
                 
                 <div className="mt-auto flex items-center text-sm font-semibold text-primary opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                   {t('View Items', 'عرض المنتجات')} <ArrowRight className="w-4 h-4 ml-1" />

@@ -56,19 +56,19 @@ export function Footer() {
               <li>
                 <Link href="/" className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
-                  Home
+                  {t('Home', 'الرئيسية')}
                 </Link>
               </li>
               <li>
                 <Link href="/catalog" className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
-                  Categories & Products
+                  {t('Categories & Products', 'الاقسام والمنتجات')}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
-                  About Us
+                  {t('About Us', 'من نحن')}
                 </Link>
               </li>
             </ul>
@@ -88,8 +88,8 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
                 >
-                  <span className="block">Al-Herafiyen District (منطقة الحرفيين)</span>
-                  <span className="block mt-1">H23F+RH6, Aqaba, Jordan</span>
+                  <span className="block">{t('Al-Herafiyen District (Handicrafts Area)', 'منطقة الحرفيين')}</span>
+                  <span className="block mt-1">{t('H23F+RH6, Aqaba, Jordan', 'H23F+RH6، العقبة، الأردن')}</span>
                 </a>
               </li>
               <li className="flex items-center gap-3 text-white/70">
@@ -103,8 +103,7 @@ export function Footer() {
                 <Clock className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div className="flex flex-col">
                   <span>{t('Saturday - Thursday', 'السبت - الخميس')}</span>
-                  <span>9:00 AM - 10:00 PM</span>
-                  <span className="mt-1 text-sm text-white/50 arabic-text">{isArabic ? '9:00 صباحا - 10:00 مساء' : 'السبت - الخميس'}</span>
+                  <span>{t('9:00 AM - 10:00 PM', '9:00 صباحا - 10:00 مساء')}</span>
                 </div>
               </li>
             </ul>

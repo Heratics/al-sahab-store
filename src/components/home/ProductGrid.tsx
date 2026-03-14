@@ -5,6 +5,7 @@ import { Link, useLocation } from 'wouter';
 import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search, X, Expand } from 'lucide-react';
 import { getStoreItems } from '@/lib/api';
 import { useUiPreferences } from '@/lib/ui-preferences';
+import { categories } from '@/data/store-data';
 
 const fallbackGradients = [
   'gradient-product-1',
@@ -83,6 +84,12 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
     });
   };
 
+  const getCategoryLabel = (category: string) => {
+    if (!isArabic) return category;
+    const categoryMatch = categories.find((entry) => entry.nameEn === category);
+    return categoryMatch?.nameAr || category;
+  };
+
   return (
     <section id="featured" className="py-24 bg-background relative border-y border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -92,7 +99,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Star className="w-5 h-5 text-accent fill-accent" />
-              <h2 className="text-sm font-bold tracking-widest text-primary uppercase">Staff Picks</h2>
+              <h2 className="text-sm font-bold tracking-widest text-primary uppercase">{t('Staff Picks', 'اختيارات مميزة')}</h2>
             </div>
             <h3 className="text-3xl md:text-4xl font-display font-bold text-foreground">
               {t('Featured Products', 'المنتجات المميزة')}
@@ -123,7 +130,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
           </label>
           <p className="text-sm text-muted-foreground md:text-right">
             {t('Showing', 'عرض')} {filteredItems.length} {t('of', 'من')} {items.length} {t('items', 'منتج')}
-            {selectedCategory ? ` ${t('in', 'في')} ${selectedCategory}` : ''}
+            {selectedCategory ? ` ${t('in', 'في')} ${getCategoryLabel(selectedCategory)}` : ''}
           </p>
         </div>
 
@@ -189,7 +196,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                   )}
 
                   <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur text-xs font-semibold text-foreground rounded-full shadow-sm">
-                    {product.category}
+                    {getCategoryLabel(product.category)}
                   </div>
                   {product.soldOut ? (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-amber-600 text-white text-xs font-bold rounded-full shadow-sm">
@@ -197,7 +204,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                     </div>
                   ) : product.onSale ? (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm">
-                      Sale
+                      {t('Sale', 'خصم')}
                     </div>
                   ) : null}
 
@@ -224,7 +231,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                           changeImage(product.id, productImages.length, -1);
                         }}
                         className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
-                        aria-label="Previous image"
+                        aria-label={t('Previous image', 'الصورة السابقة')}
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -235,7 +242,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                           changeImage(product.id, productImages.length, 1);
                         }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
-                        aria-label="Next image"
+                        aria-label={t('Next image', 'الصورة التالية')}
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -247,9 +254,6 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                   <h4 className="font-bold text-lg text-foreground leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
                     {isArabic ? product.nameAr : product.nameEn}
                   </h4>
-                  <h5 className="arabic-text text-base text-muted-foreground mb-2 line-clamp-1">
-                    {isArabic ? product.nameEn : product.nameAr}
-                  </h5>
                   <p className="text-sm text-foreground/70 mb-4 line-clamp-2">
                     {isArabic ? product.descAr : product.descEn}
                   </p>

@@ -46,8 +46,8 @@ export function AboutSection() {
                       <MapPin className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground text-lg">Location <span className="arabic-text text-sm font-normal text-muted-foreground ml-2">الموقع</span></h4>
-                      <p className="text-muted-foreground mt-1">Al-Herafiyen District (منطقة الحرفيين)<br/>H23F+RH6, Aqaba, Jordan</p>
+                      <h4 className="font-bold text-foreground text-lg">{t('Location', 'الموقع')}</h4>
+                      <p className="text-muted-foreground mt-1">{t('Al-Herafiyen District (Handicrafts Area)', 'منطقة الحرفيين')}<br/>{t('H23F+RH6, Aqaba, Jordan', 'H23F+RH6، العقبة، الأردن')}</p>
                     </div>
                   </div>
 

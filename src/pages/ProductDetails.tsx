@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { getStoreItemById, getStoreItems } from "@/lib/api";
 import { useUiPreferences } from "@/lib/ui-preferences";
+import { categories } from "@/data/store-data";
 
 function shuffle<T>(arr: T[]): T[] {
   const clone = [...arr];
@@ -51,6 +52,12 @@ export default function ProductDetails() {
       : [];
 
   const showImageArrows = currentImages.length > 1;
+
+  const getCategoryLabel = (category: string) => {
+    if (!isArabic) return category;
+    const categoryMatch = categories.find((entry) => entry.nameEn === category);
+    return categoryMatch?.nameAr || category;
+  };
 
   const goToPrevImage = () => {
     if (!currentImages.length) return;
@@ -125,7 +132,7 @@ export default function ProductDetails() {
                         type="button"
                         onClick={goToPrevImage}
                         className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
-                        aria-label="Previous image"
+                        aria-label={t('Previous image', 'الصورة السابقة')}
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
@@ -133,7 +140,7 @@ export default function ProductDetails() {
                         type="button"
                         onClick={goToNextImage}
                         className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
-                        aria-label="Next image"
+                        aria-label={t('Next image', 'الصورة التالية')}
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
@@ -158,10 +165,9 @@ export default function ProductDetails() {
 
               <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
                 <div className="inline-flex px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-semibold mb-4">
-                  {itemQuery.data.category}
+                  {getCategoryLabel(itemQuery.data.category)}
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">{isArabic ? itemQuery.data.nameAr : itemQuery.data.nameEn}</h1>
-                <p className="arabic-text text-xl text-muted-foreground mt-2">{isArabic ? itemQuery.data.nameEn : itemQuery.data.nameAr}</p>
 
                 <div className="mt-6">
                   {itemQuery.data.soldOut ? (
@@ -185,10 +191,6 @@ export default function ProductDetails() {
                     <h2 className="font-semibold text-foreground mb-1">{t('Description', 'الوصف')}</h2>
                     <p className="text-foreground/80">{isArabic ? itemQuery.data.descAr : itemQuery.data.descEn}</p>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground mb-1">{t('Arabic', 'English')}</h3>
-                    <p className="arabic-text text-muted-foreground">{isArabic ? itemQuery.data.descEn : itemQuery.data.descAr}</p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -201,7 +203,7 @@ export default function ProductDetails() {
                     <img src={related.imageUrls?.[0] || related.imageUrl} alt={related.nameEn} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="p-4">
                       <h3 className="font-semibold line-clamp-1">{isArabic ? related.nameAr : related.nameEn}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{related.category}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{getCategoryLabel(related.category)}</p>
                       <p className="font-bold text-primary mb-3">
                         ${Number((related.onSale && related.salePrice != null) ? related.salePrice : related.price).toFixed(2)}
                       </p>
