@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -150,8 +151,9 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
   }
 });
 
-if (process.env.NODE_ENV === "production") {
-  const staticDir = path.join(__dirname, "..", "dist", "public");
+const staticDir = path.join(__dirname, "..", "dist", "public");
+
+if (fs.existsSync(staticDir)) {
   const appMode = process.env.APP_MODE || "all";
   app.use(express.static(staticDir));
 
