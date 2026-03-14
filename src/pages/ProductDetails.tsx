@@ -25,14 +25,15 @@ export default function ProductDetails() {
   const id = Number(location.split("/").pop() ?? NaN);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isImageExpanded, setIsImageExpanded] = useState(false);
-  const queryErrorMessage = itemQuery.error instanceof Error ? itemQuery.error.message : "";
-  const isNoLongerSold = queryErrorMessage.toLowerCase().includes("no longer sold");
 
   const itemQuery = useQuery({
     queryKey: ["store-item", id],
     queryFn: () => getStoreItemById(id),
     enabled: Number.isInteger(id) && id > 0,
   });
+
+  const queryErrorMessage = itemQuery.error instanceof Error ? itemQuery.error.message : "";
+  const isNoLongerSold = queryErrorMessage.toLowerCase().includes("no longer sold");
 
   const allItemsQuery = useQuery({
     queryKey: ["store-items"],
