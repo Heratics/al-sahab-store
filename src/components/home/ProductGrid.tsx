@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
-import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
+import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search, X, Expand } from 'lucide-react';
 import { getStoreItems } from '@/lib/api';
 import { useUiPreferences } from '@/lib/ui-preferences';
 
@@ -22,13 +22,22 @@ type ProductGridProps = {
   selectedCategory: string | null;
   onCategoryChange: (category: string | null) => void;
   initialSearchTerm?: string;
+  prioritizedItemId?: number | null;
 };
 
-export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchTerm = '' }: ProductGridProps) {
+export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchTerm = '', prioritizedItemId = null }: ProductGridProps) {
   const { isArabic, t } = useUiPreferences();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [imageIndexByItem, setImageIndexByItem] = useState<Record<number, number>>({});
   const [expandedImage, setExpandedImage] = useState<{ src: string; alt: string } | null>(null);
+
+  const openItemDetails = (itemId: number) => {
+    sessionStorage.setItem('catalog-return-item-id', String(itemId));
+    sessionStorage.setItem('catalog-return-search', searchTerm.trim());
+    sessionStorage.setItem('catalog-return-category', selectedCategory || '');
+    setLocation(`/item/${itemId}`);
+  };
 
   useEffect(() => {
     setSearchTerm(initialSearchTerm);
@@ -41,7 +50,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
 
   const filteredItems = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    return items.filter((item) => {
+    const baseFiltered = items.filter((item) => {
       if (selectedCategory && item.category !== selectedCategory) return false;
       if (!query) return true;
 
@@ -50,7 +59,14 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
         .toLowerCase()
         .includes(query);
     });
-  }, [items, searchTerm, selectedCategory]);
+
+    if (!prioritizedItemId) return baseFiltered;
+
+    const highlighted = baseFiltered.find((item) => item.id === prioritizedItemId);
+    if (!highlighted) return baseFiltered;
+
+    return [highlighted, ...baseFiltered.filter((item) => item.id !== prioritizedItemId)];
+  }, [items, searchTerm, selectedCategory, prioritizedItemId]);
 
   const getCurrentImage = (product: (typeof items)[number]) => {
     const images = product.imageUrls?.length ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
@@ -144,22 +160,24 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="group flex flex-col"
+                className={`group flex flex-col cursor-pointer ${prioritizedItemId === product.id ? 'ring-2 ring-primary/40 ring-offset-2 ring-offset-background rounded-2xl' : ''}`}
+                onClick={() => openItemDetails(product.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openItemDetails(product.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-md transition-shadow">
                   {currentImage ? (
-                    <button
-                      type="button"
-                      onClick={() => setExpandedImage({ src: currentImage, alt: product.nameEn })}
-                      className="w-full h-full"
-                      aria-label={t('Open image', 'فتح الصورة')}
-                    >
-                      <img
-                        src={currentImage}
-                        alt={product.nameEn}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                    </button>
+                    <img
+                      src={currentImage}
+                      alt={product.nameEn}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
                   ) : (
                     <>
                       <div className={`absolute inset-0 w-full h-full ${fallbackGradients[index % fallbackGradients.length]} mix-blend-multiply opacity-80 group-hover:scale-105 transition-transform duration-700`}></div>
@@ -177,6 +195,20 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                     <div className="absolute top-3 right-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm">
                       Sale
                     </div>
+                  ) : null}
+
+                  {currentImage ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExpandedImage({ src: currentImage, alt: product.nameEn });
+                      }}
+                      className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-black/45 text-white hover:bg-black/65 transition-colors flex items-center justify-center"
+                      aria-label={t('Open image', 'فتح الصورة')}
+                    >
+                      <Expand className="w-4 h-4" />
+                    </button>
                   ) : null}
 
                   {hasImageCarousel ? (
@@ -232,6 +264,11 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                     </div>
                     <Link
                       href={`/item/${product.id}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openItemDetails(product.id);
+                      }}
                       className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors"
                     >
                       <ArrowRight className="w-4 h-4" />
@@ -258,7 +295,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
         </div>
 
         {expandedImage ? (
-          <div className="fixed inset-0 z-[70] bg-black/90 p-4 sm:p-8 flex items-center justify-center">
+          <div className="fixed inset-0 z-70 bg-black/90 p-4 sm:p-8 flex items-center justify-center">
             <button
               type="button"
               onClick={() => setExpandedImage(null)}

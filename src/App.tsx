@@ -11,7 +11,16 @@ import About from "@/pages/About";
 import ProductDetails from "@/pages/ProductDetails";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  },
+});
 
 function RouteScrollManager() {
   const [location] = useLocation();

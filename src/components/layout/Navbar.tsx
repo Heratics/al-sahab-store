@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { Menu, X, Phone, MapPin, Search, SlidersHorizontal, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUiPreferences } from '@/lib/ui-preferences';
+import { categories } from '@/data/store-data';
 
 export function Navbar() {
   const [, setLocation] = useLocation();
@@ -39,8 +40,25 @@ export function Navbar() {
       } else {
         url.searchParams.delete('q');
       }
+      url.searchParams.delete('cat');
       window.history.replaceState({}, '', url.toString());
       window.dispatchEvent(new Event('catalog-search'));
+    }, 0);
+
+    setMobileMenuOpen(false);
+  };
+
+  const runCatalogCategory = (category: string) => {
+    sessionStorage.setItem('catalog-category-value', category);
+    sessionStorage.setItem('catalog-category-pending', '1');
+
+    setLocation('/catalog');
+    window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('cat', category);
+      url.hash = 'featured';
+      window.history.replaceState({}, '', url.toString());
+      window.dispatchEvent(new Event('catalog-category'));
     }, 0);
 
     setMobileMenuOpen(false);
@@ -62,7 +80,7 @@ export function Navbar() {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white/80 backdrop-blur-xl shadow-sm py-3' : 'bg-transparent py-5'
+        isScrolled ? 'bg-background/90 backdrop-blur-xl shadow-sm py-3' : 'bg-transparent py-5'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -212,7 +230,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t border-border/50 shadow-xl overflow-hidden"
+            className="md:hidden bg-card/95 backdrop-blur border-t border-border/50 shadow-xl overflow-hidden"
           >
             <div className="px-4 py-6 flex flex-col gap-4">
               <div className="flex items-center gap-2 rounded-xl border border-border px-2 py-1.5">
@@ -243,6 +261,25 @@ export function Navbar() {
                   <span className="font-medium text-foreground">{link.name}</span>
                 </Link>
               ))}
+
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  {t('Browse Categories', 'تصفح الاقسام')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => runCatalogCategory(category.nameEn)}
+                      className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                    >
+                      {isArabic ? category.nameAr : category.nameEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="h-px bg-border/50 my-2" />
 
               <div className="space-y-2 rounded-xl border border-border p-3">

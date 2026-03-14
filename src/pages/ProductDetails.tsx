@@ -65,11 +65,23 @@ export default function ProductDetails() {
     setIsImageExpanded(false);
   }, [id]);
 
+  const backToStoreHref = useMemo(() => {
+    const params = new URLSearchParams();
+    const savedSearch = sessionStorage.getItem('catalog-return-search')?.trim();
+    const savedCategory = sessionStorage.getItem('catalog-return-category')?.trim();
+
+    if (savedSearch) params.set('q', savedSearch);
+    if (savedCategory) params.set('cat', savedCategory);
+
+    const query = params.toString();
+    return query ? `/catalog?${query}#featured` : '/catalog#featured';
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-28 sm:pt-32 pb-10">
-        <Link href="/" className="inline-flex max-w-full items-center gap-2 text-sm font-semibold text-primary hover:opacity-80 mb-6 wrap-break-word">
+        <Link href={backToStoreHref} className="inline-flex max-w-full items-center gap-2 text-sm font-semibold text-primary hover:opacity-80 mb-6 wrap-break-word">
           <ArrowLeft className="w-4 h-4" /> {t('Back to store', 'العودة للمتجر')}
         </Link>
 

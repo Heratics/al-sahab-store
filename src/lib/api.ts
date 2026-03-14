@@ -1,6 +1,11 @@
 import type { CreateStoreItemPayload, StoreItem } from "@/lib/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const ITEMS_CACHE_TTL_MS = 60_000;
+
+let itemsCache: StoreItem[] | null = null;
+let itemsCacheAt = 0;
+let itemsRequestInFlight: Promise<StoreItem[]> | null = null;
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -17,12 +22,36 @@ function authHeaders(token: string) {
 }
 
 export async function getStoreItems(): Promise<StoreItem[]> {
+  const now = Date.now();
+  if (itemsCache && now - itemsCacheAt < ITEMS_CACHE_TTL_MS) {
+    return itemsCache;
+  }
+
+  if (itemsRequestInFlight) {
+    return itemsRequestInFlight;
+  }
+
+  itemsRequestInFlight = (async () => {
   const response = await fetch(`${API_BASE_URL}/api/items`);
   const data = await parseResponse<{ items: StoreItem[] }>(response);
-  return data.items;
+    itemsCache = data.items;
+    itemsCacheAt = Date.now();
+    return data.items;
+  })();
+
+  try {
+    return await itemsRequestInFlight;
+  } finally {
+    itemsRequestInFlight = null;
+  }
 }
 
 export async function getStoreItemById(id: number): Promise<StoreItem> {
+  if (itemsCache) {
+    const cached = itemsCache.find((item) => item.id === id);
+    if (cached) return cached;
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/items/${id}`);
   const data = await parseResponse<{ item: StoreItem }>(response);
   return data.item;
@@ -53,6 +82,8 @@ export async function createStoreItem(payload: CreateStoreItemPayload, token: st
     body: JSON.stringify(payload),
   });
   const data = await parseResponse<{ id: number }>(response);
+  itemsCache = null;
+  itemsCacheAt = 0;
   return data.id;
 }
 
@@ -63,5 +94,7 @@ export async function updateStoreItem(id: number, payload: CreateStoreItemPayloa
     body: JSON.stringify(payload),
   });
   const data = await parseResponse<{ id: number }>(response);
+  itemsCache = null;
+  itemsCacheAt = 0;
   return data.id;
 }
