@@ -24,8 +24,30 @@ const productSchema = z.object({
   descEn: z.string().min(10).max(1000),
   descAr: z.string().min(10).max(1000),
   imageUrl: z.string().url().max(500),
+  price: z.number().positive().max(99999999.99),
+  onSale: z.boolean().optional().default(false),
+  salePrice: z.number().positive().max(99999999.99).nullable().optional(),
   isFeatured: z.boolean().optional().default(true),
   status: z.enum(["draft", "published"]).optional().default("published"),
+}).superRefine((data, ctx) => {
+  if (data.onSale) {
+    if (typeof data.salePrice !== "number") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salePrice"],
+        message: "salePrice is required when onSale is true",
+      });
+      return;
+    }
+
+    if (data.salePrice >= data.price) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["salePrice"],
+        message: "salePrice must be lower than price",
+      });
+    }
+  }
 });
 
 const corsOrigin = process.env.CORS_ORIGIN?.split(",").map((v) => v.trim()).filter(Boolean) || "*";
@@ -49,6 +71,16 @@ function requireAuth(req, res, next) {
   }
 }
 
+function normalizeItem(item) {
+  return {
+    ...item,
+    price: Number(item.price),
+    salePrice: item.salePrice == null ? null : Number(item.salePrice),
+    onSale: Boolean(item.onSale),
+    isFeatured: Boolean(item.isFeatured),
+  };
+}
+
 // ── Public routes ──────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "al-sahab-store-api" });
@@ -58,12 +90,12 @@ app.get("/api/items", async (_req, res) => {
   try {
     const items = await runQuery(
       `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl,
-              is_featured AS isFeatured, status, created_at AS createdAt
+              price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
        WHERE status = 'published'
        ORDER BY is_featured DESC, created_at DESC`
     );
-    res.json({ items });
+    res.json({ items: items.map(normalizeItem) });
   } catch (error) {
     console.error("Failed to fetch items", error);
     res.status(500).json({ error: "Failed to fetch items" });
@@ -84,7 +116,9 @@ app.post("/api/admin/login", async (req, res) => {
       [username]
     );
 
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    const hasValidHash = user && typeof user.password_hash === "string" && user.password_hash.startsWith("$2");
+
+    if (!hasValidHash || !(await bcrypt.compare(password, user.password_hash))) {
       // Same message for both cases — don't reveal which part was wrong
       res.status(401).json({ error: "Invalid credentials" });
       return;
@@ -108,11 +142,11 @@ app.get("/api/admin/items", requireAuth, async (_req, res) => {
   try {
     const items = await runQuery(
       `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl,
-              is_featured AS isFeatured, status, created_at AS createdAt
+              price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
        ORDER BY created_at DESC`
     );
-    res.json({ items });
+    res.json({ items: items.map(normalizeItem) });
   } catch (error) {
     console.error("Failed to fetch admin items", error);
     res.status(500).json({ error: "Failed to fetch admin items" });
@@ -131,8 +165,8 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
 
   try {
     const result = await runQuery(
-      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, is_featured, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, price, on_sale, sale_price, is_featured, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.nameEn,
         payload.nameAr,
@@ -140,6 +174,9 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
         payload.descEn,
         payload.descAr,
         payload.imageUrl,
+        payload.price,
+        payload.onSale,
+        payload.onSale ? payload.salePrice : null,
         payload.isFeatured,
         payload.status,
       ]

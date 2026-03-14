@@ -90,6 +90,11 @@ export function ProductGrid() {
                 <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur text-xs font-semibold text-foreground rounded-full shadow-sm">
                   {product.category}
                 </div>
+                {product.onSale ? (
+                  <div className="absolute top-3 right-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm">
+                    Sale
+                  </div>
+                ) : null}
               </div>
 
               <div className="grow flex flex-col px-1">
@@ -104,10 +109,16 @@ export function ProductGrid() {
                 </p>
                 
                 <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
-                  {/* Price Placeholder */}
                   <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground uppercase font-semibold">Price in Store</span>
-                    <span className="font-bold text-lg text-foreground">Visit Us</span>
+                    <span className="text-xs text-muted-foreground uppercase font-semibold">Price</span>
+                    {product.onSale && product.salePrice != null ? (
+                      <span className="font-bold text-lg text-primary">
+                        ${Number(product.salePrice).toFixed(2)}
+                        <span className="ml-2 text-sm text-muted-foreground line-through">${Number(product.price).toFixed(2)}</span>
+                      </span>
+                    ) : (
+                      <span className="font-bold text-lg text-foreground">${Number(product.price).toFixed(2)}</span>
+                    )}
                   </div>
                   <a 
                     href="#about"

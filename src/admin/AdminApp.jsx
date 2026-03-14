@@ -12,6 +12,9 @@ const defaultForm = {
   descEn: "",
   descAr: "",
   imageUrl: "",
+  price: "",
+  onSale: false,
+  salePrice: "",
   isFeatured: true,
   status: "published",
 };
@@ -29,7 +32,7 @@ export default function AdminApp() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => createStoreItem(form, token),
+    mutationFn: (payload) => createStoreItem(payload, token),
     onSuccess: (id) => {
       setForm(defaultForm);
       setNotice(`Item #${id} created successfully.`);
@@ -47,7 +50,32 @@ export default function AdminApp() {
   const onSubmit = (event) => {
     event.preventDefault();
     setNotice("");
-    createMutation.mutate();
+
+    const price = Number(form.price);
+    const salePrice = form.onSale && form.salePrice !== "" ? Number(form.salePrice) : null;
+
+    if (!Number.isFinite(price) || price <= 0) {
+      setNotice("Please enter a valid base price.");
+      return;
+    }
+
+    if (form.onSale) {
+      if (!Number.isFinite(salePrice) || salePrice <= 0) {
+        setNotice("Please enter a valid sale price.");
+        return;
+      }
+
+      if (salePrice >= price) {
+        setNotice("Sale price must be less than base price.");
+        return;
+      }
+    }
+
+    createMutation.mutate({
+      ...form,
+      price,
+      salePrice,
+    });
   };
 
   if (!token) {
@@ -120,6 +148,44 @@ export default function AdminApp() {
               />
             </label>
 
+            <div className="grid sm:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="text-sm font-semibold">Base Price</span>
+                <input
+                  value={form.price}
+                  onChange={(e) => onInput("price", e.target.value)}
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2"
+                />
+              </label>
+              <label className="inline-flex items-center gap-2 font-medium mt-6">
+                <input
+                  type="checkbox"
+                  checked={form.onSale}
+                  onChange={(e) => onInput("onSale", e.target.checked)}
+                />
+                On sale
+              </label>
+            </div>
+
+            {form.onSale ? (
+              <label className="block">
+                <span className="text-sm font-semibold">Sale Price</span>
+                <input
+                  value={form.salePrice}
+                  onChange={(e) => onInput("salePrice", e.target.value)}
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2"
+                />
+              </label>
+            ) : null}
+
             <label className="block">
               <span className="text-sm font-semibold">Description (EN)</span>
               <textarea
@@ -186,6 +252,16 @@ export default function AdminApp() {
                     <p className="font-semibold">{item.nameEn}</p>
                     <p className="arabic-text text-sm text-muted-foreground">{item.nameAr}</p>
                     <p className="text-xs text-muted-foreground mt-1">{item.category} | {item.status}</p>
+                    <p className="text-sm mt-2">
+                      {item.onSale && item.salePrice != null ? (
+                        <>
+                          <span className="text-muted-foreground line-through mr-2">${Number(item.price).toFixed(2)}</span>
+                          <span className="font-semibold text-primary">${Number(item.salePrice).toFixed(2)}</span>
+                        </>
+                      ) : (
+                        <span className="font-semibold text-foreground">${Number(item.price).toFixed(2)}</span>
+                      )}
+                    </p>
                   </li>
                 ))}
               </ul>

@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS items (
   desc_en TEXT NOT NULL,
   desc_ar TEXT NOT NULL,
   image_url VARCHAR(500) NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  on_sale TINYINT(1) NOT NULL DEFAULT 0,
+  sale_price DECIMAL(10,2) NULL,
   is_featured TINYINT(1) NOT NULL DEFAULT 1,
   status ENUM('draft', 'published') NOT NULL DEFAULT 'published',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -23,3 +26,9 @@ CREATE TABLE IF NOT EXISTS items (
   PRIMARY KEY (id),
   INDEX idx_items_status_featured_created (status, is_featured, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Run this on existing databases that already have the items table:
+ALTER TABLE items
+  ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  ADD COLUMN IF NOT EXISTS on_sale TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS sale_price DECIMAL(10,2) NULL;

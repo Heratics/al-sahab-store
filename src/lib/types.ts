@@ -6,6 +6,9 @@ export type StoreItem = {
   descEn: string;
   descAr: string;
   imageUrl: string;
+  price: number;
+  onSale: boolean;
+  salePrice: number | null;
   isFeatured: boolean;
   status: "draft" | "published";
   createdAt: string;
@@ -18,6 +21,9 @@ export type CreateStoreItemPayload = {
   descEn: string;
   descAr: string;
   imageUrl: string;
+  price: number;
+  onSale: boolean;
+  salePrice: number | null;
   isFeatured: boolean;
   status: "draft" | "published";
 };
