@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { runQuery } from "./db.js";
+import { ensureItemsSchema, getTableColumns, runQuery } from "./db.js";
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -111,6 +111,33 @@ function normalizeItem(item) {
   };
 }
 
+async function getItemsSelectConfig() {
+  const columns = await getTableColumns("items");
+  const selectFields = [
+    "id",
+    "name_en AS nameEn",
+    "name_ar AS nameAr",
+    "category",
+    "desc_en AS descEn",
+    "desc_ar AS descAr",
+    "image_url AS imageUrl",
+    columns.has("image_urls_json") ? "image_urls_json AS imageUrlsJson" : "NULL AS imageUrlsJson",
+    columns.has("price") ? "price" : "0.00 AS price",
+    columns.has("on_sale") ? "on_sale AS onSale" : "0 AS onSale",
+    columns.has("sold_out") ? "sold_out AS soldOut" : "0 AS soldOut",
+    columns.has("sale_price") ? "sale_price AS salePrice" : "NULL AS salePrice",
+    columns.has("is_featured") ? "is_featured AS isFeatured" : "1 AS isFeatured",
+    columns.has("status") ? "status" : "'published' AS status",
+    "created_at AS createdAt",
+  ];
+
+  return {
+    hasStatus: columns.has("status"),
+    hasFeatured: columns.has("is_featured"),
+    selectClause: selectFields.join(",\n              "),
+  };
+}
+
 // ── Public routes ──────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true, service: "al-sahab-store-api" });
@@ -118,12 +145,12 @@ app.get("/health", (_req, res) => {
 
 app.get("/api/items", async (_req, res) => {
   try {
+    const { hasFeatured, hasStatus, selectClause } = await getItemsSelectConfig();
     const items = await runQuery(
-      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
-              price, on_sale AS onSale, sold_out AS soldOut, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+      `SELECT ${selectClause}
        FROM items
-       WHERE status = 'published'
-       ORDER BY is_featured DESC, created_at DESC`
+       ${hasStatus ? "WHERE status = 'published'" : ""}
+       ORDER BY ${hasFeatured ? "is_featured DESC, " : ""}created_at DESC`
     );
     res.json({ items: items.map(normalizeItem) });
   } catch (error) {
@@ -140,9 +167,9 @@ app.get("/api/items/:id", async (req, res) => {
   }
 
   try {
+    const { selectClause } = await getItemsSelectConfig();
     const [item] = await runQuery(
-      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
-              price, on_sale AS onSale, sold_out AS soldOut, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+      `SELECT ${selectClause}
        FROM items
        WHERE id = ?
        LIMIT 1`,
@@ -199,9 +226,9 @@ app.post("/api/admin/login", async (req, res) => {
 // ── Protected admin routes ─────────────────────────────────────────────────────
 app.get("/api/admin/items", requireAuth, async (_req, res) => {
   try {
+    const { selectClause } = await getItemsSelectConfig();
     const items = await runQuery(
-      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
-              price, on_sale AS onSale, sold_out AS soldOut, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+      `SELECT ${selectClause}
        FROM items
        ORDER BY created_at DESC`
     );
@@ -223,6 +250,7 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
   const payload = parsed.data;
 
   try {
+    await ensureItemsSchema();
     const result = await runQuery(
       `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, image_urls_json, price, on_sale, sold_out, sale_price, is_featured, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -266,6 +294,7 @@ app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
   const payload = parsed.data;
 
   try {
+    await ensureItemsSchema();
     const result = await runQuery(
       `UPDATE items
        SET name_en = ?, name_ar = ?, category = ?, desc_en = ?, desc_ar = ?, image_url = ?, image_urls_json = ?,
@@ -376,6 +405,15 @@ if (fs.existsSync(staticDir)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+async function startServer() {
+  await ensureItemsSchema();
+
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error("Failed to start server", error);
+  process.exit(1);
 });
