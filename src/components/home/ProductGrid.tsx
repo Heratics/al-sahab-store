@@ -191,7 +191,11 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                   <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur text-xs font-semibold text-foreground rounded-full shadow-sm">
                     {product.category}
                   </div>
-                  {product.onSale ? (
+                  {product.soldOut ? (
+                    <div className="absolute top-3 right-3 px-3 py-1 bg-amber-600 text-white text-xs font-bold rounded-full shadow-sm">
+                      {t('Sold Out', 'نفدت الكمية')}
+                    </div>
+                  ) : product.onSale ? (
                     <div className="absolute top-3 right-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm">
                       Sale
                     </div>
@@ -261,6 +265,9 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                       ) : (
                         <span className="font-bold text-lg text-foreground">${Number(product.price).toFixed(2)}</span>
                       )}
+                      {product.soldOut ? (
+                        <span className="text-xs font-semibold text-amber-600 mt-1">{t('Currently Sold Out', 'غير متوفر حاليا')}</span>
+                      ) : null}
                     </div>
                     <Link
                       href={`/item/${product.id}`}

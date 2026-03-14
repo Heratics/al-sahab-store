@@ -9,6 +9,7 @@ export type StoreItem = {
   imageUrls: string[];
   price: number;
   onSale: boolean;
+  soldOut: boolean;
   salePrice: number | null;
   isFeatured: boolean;
   status: "draft" | "published";
@@ -24,6 +25,7 @@ export type CreateStoreItemPayload = {
   imageUrls: string[];
   price: number;
   onSale: boolean;
+  soldOut: boolean;
   salePrice: number | null;
   isFeatured: boolean;
   status: "draft" | "published";

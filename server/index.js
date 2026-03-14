@@ -32,6 +32,7 @@ const productSchema = z.object({
   imageUrls: z.array(imageInputSchema).min(1).max(MAX_IMAGES),
   price: z.number().positive().max(99999999.99),
   onSale: z.boolean().optional().default(false),
+  soldOut: z.boolean().optional().default(false),
   salePrice: z.number().positive().max(99999999.99).nullable().optional(),
   isFeatured: z.boolean().optional().default(true),
   status: z.enum(["draft", "published"]).optional().default("published"),
@@ -105,6 +106,7 @@ function normalizeItem(item) {
     price: Number(item.price),
     salePrice: item.salePrice == null ? null : Number(item.salePrice),
     onSale: Boolean(item.onSale),
+    soldOut: Boolean(item.soldOut),
     isFeatured: Boolean(item.isFeatured),
   };
 }
@@ -118,7 +120,7 @@ app.get("/api/items", async (_req, res) => {
   try {
     const items = await runQuery(
       `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
-              price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+              price, on_sale AS onSale, sold_out AS soldOut, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
        WHERE status = 'published'
        ORDER BY is_featured DESC, created_at DESC`
@@ -140,15 +142,15 @@ app.get("/api/items/:id", async (req, res) => {
   try {
     const [item] = await runQuery(
       `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
-              price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+              price, on_sale AS onSale, sold_out AS soldOut, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
-       WHERE id = ? AND status = 'published'
+       WHERE id = ?
        LIMIT 1`,
       [itemId]
     );
 
-    if (!item) {
-      res.status(404).json({ error: "Item not found" });
+    if (!item || item.status !== "published") {
+      res.status(410).json({ error: "Item no longer sold." });
       return;
     }
 
@@ -199,7 +201,7 @@ app.get("/api/admin/items", requireAuth, async (_req, res) => {
   try {
     const items = await runQuery(
       `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
-              price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+              price, on_sale AS onSale, sold_out AS soldOut, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
        ORDER BY created_at DESC`
     );
@@ -222,8 +224,8 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
 
   try {
     const result = await runQuery(
-      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, image_urls_json, price, on_sale, sale_price, is_featured, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, image_urls_json, price, on_sale, sold_out, sale_price, is_featured, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.nameEn,
         payload.nameAr,
@@ -234,6 +236,7 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
         JSON.stringify(payload.imageUrls),
         payload.price,
         payload.onSale,
+        payload.soldOut,
         payload.onSale ? payload.salePrice : null,
         payload.isFeatured,
         payload.status,
@@ -266,7 +269,7 @@ app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
     const result = await runQuery(
       `UPDATE items
        SET name_en = ?, name_ar = ?, category = ?, desc_en = ?, desc_ar = ?, image_url = ?, image_urls_json = ?,
-           price = ?, on_sale = ?, sale_price = ?, is_featured = ?, status = ?
+           price = ?, on_sale = ?, sold_out = ?, sale_price = ?, is_featured = ?, status = ?
        WHERE id = ?`,
       [
         payload.nameEn,
@@ -278,6 +281,7 @@ app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
         JSON.stringify(payload.imageUrls),
         payload.price,
         payload.onSale,
+        payload.soldOut,
         payload.onSale ? payload.salePrice : null,
         payload.isFeatured,
         payload.status,
@@ -294,6 +298,27 @@ app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Failed to update item", error);
     res.status(500).json({ error: "Failed to update item" });
+  }
+});
+
+app.delete("/api/admin/items/:id", requireAuth, async (req, res) => {
+  const itemId = Number(req.params.id);
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    res.status(400).json({ error: "Invalid item id" });
+    return;
+  }
+
+  try {
+    const result = await runQuery("DELETE FROM items WHERE id = ?", [itemId]);
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "Item not found" });
+      return;
+    }
+
+    res.status(200).json({ id: itemId });
+  } catch (error) {
+    console.error("Failed to delete item", error);
+    res.status(500).json({ error: "Failed to delete item" });
   }
 });
 
@@ -317,6 +342,38 @@ if (fs.existsSync(staticDir)) {
       res.sendFile(path.join(staticDir, fileName));
     });
   }
+
+  app.get("*", (req, res, next) => {
+    const acceptsHtml = req.accepts(["html", "json", "text"]) === "html";
+    const hasFileExtension = path.extname(req.path) !== "";
+
+    if (req.path.startsWith("/api") || req.path === "/health") {
+      next();
+      return;
+    }
+
+    if (!acceptsHtml || hasFileExtension) {
+      next();
+      return;
+    }
+
+    if (appMode === "admin") {
+      res.sendFile(path.join(staticDir, "admin.html"));
+      return;
+    }
+
+    if (appMode === "storefront") {
+      res.sendFile(path.join(staticDir, "index.html"));
+      return;
+    }
+
+    if (req.path.startsWith("/admin")) {
+      res.sendFile(path.join(staticDir, "admin.html"));
+      return;
+    }
+
+    res.sendFile(path.join(staticDir, "index.html"));
+  });
 }
 
 app.listen(PORT, () => {

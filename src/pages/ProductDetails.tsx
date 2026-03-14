@@ -24,6 +24,8 @@ export default function ProductDetails() {
   const id = Number(location.split("/").pop() ?? NaN);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isImageExpanded, setIsImageExpanded] = useState(false);
+  const queryErrorMessage = itemQuery.error instanceof Error ? itemQuery.error.message : "";
+  const isNoLongerSold = queryErrorMessage.toLowerCase().includes("no longer sold");
 
   const itemQuery = useQuery({
     queryKey: ["store-item", id],
@@ -91,7 +93,9 @@ export default function ProductDetails() {
           </div>
         ) : itemQuery.isError ? (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center text-destructive">
-            {t('Failed to load this item.', 'فشل تحميل هذا المنتج.')}
+            {isNoLongerSold
+              ? t('Item no longer sold.', 'المنتج لم يعد متوفرا للبيع.')
+              : t('Failed to load this item.', 'فشل تحميل هذا المنتج.')}
           </div>
         ) : !itemQuery.data ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
@@ -160,7 +164,12 @@ export default function ProductDetails() {
                 <p className="arabic-text text-xl text-muted-foreground mt-2">{isArabic ? itemQuery.data.nameEn : itemQuery.data.nameAr}</p>
 
                 <div className="mt-6">
-                  {itemQuery.data.onSale && itemQuery.data.salePrice != null ? (
+                  {itemQuery.data.soldOut ? (
+                    <div className="space-y-2">
+                      <span className="inline-flex text-xs font-bold px-2 py-1 rounded-full bg-amber-600 text-white">{t('Sold Out', 'نفدت الكمية')}</span>
+                      <p className="text-foreground/80">{t('Item no longer available for sale.', 'المنتج لم يعد متوفرا للبيع.')}</p>
+                    </div>
+                  ) : itemQuery.data.onSale && itemQuery.data.salePrice != null ? (
                     <div className="flex items-center gap-3">
                       <span className="text-3xl font-bold text-primary">${Number(itemQuery.data.salePrice).toFixed(2)}</span>
                       <span className="text-lg text-muted-foreground line-through">${Number(itemQuery.data.price).toFixed(2)}</span>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
-import { createStoreItem, getAdminItems, updateStoreItem } from "@/lib/api";
+import { Save, Loader2, ShieldCheck, Eye, EyeOff, Trash2 } from "lucide-react";
+import { createStoreItem, deleteStoreItem, getAdminItems, updateStoreItem } from "@/lib/api";
 import { adminLogin } from "@/lib/api";
 import { LogIn, LogOut } from "lucide-react";
 import { categories } from "@/data/store-data";
@@ -26,6 +26,7 @@ const defaultForm = {
   imageUrls: [""],
   price: "",
   onSale: false,
+  soldOut: false,
   salePrice: "",
   isFeatured: true,
   status: "published",
@@ -64,6 +65,23 @@ export default function AdminApp() {
       setForm(defaultForm);
       setEditingItemId(null);
       setNotice(`Item #${id} updated successfully.`);
+      queryClient.invalidateQueries({ queryKey: ["admin-items"] });
+      queryClient.invalidateQueries({ queryKey: ["store-items"] });
+      queryClient.invalidateQueries({ queryKey: ["store-item"] });
+    },
+    onError: (error) => {
+      setNotice(error.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteStoreItem(id, token),
+    onSuccess: (_data, deletedItemId) => {
+      if (editingItemId != null && deletedItemId === editingItemId) {
+        setForm(defaultForm);
+        setEditingItemId(null);
+      }
+      setNotice("Item deleted successfully.");
       queryClient.invalidateQueries({ queryKey: ["admin-items"] });
       queryClient.invalidateQueries({ queryKey: ["store-items"] });
       queryClient.invalidateQueries({ queryKey: ["store-item"] });
@@ -346,6 +364,17 @@ export default function AdminApp() {
                 />
                 Featured item
               </label>
+              <label className="inline-flex items-center gap-2 font-medium">
+                <input
+                  type="checkbox"
+                  checked={form.soldOut}
+                  onChange={(e) => onInput("soldOut", e.target.checked)}
+                />
+                Sold out
+              </label>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
               <label className="block">
                 <span className="text-sm font-semibold">Status</span>
                 <select
@@ -405,6 +434,9 @@ export default function AdminApp() {
                         <span className="font-semibold text-foreground">${Number(item.price).toFixed(2)}</span>
                       )}
                     </p>
+                    {item.soldOut ? (
+                      <p className="text-xs font-semibold text-amber-600 mt-1">Sold out</p>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => {
@@ -418,6 +450,7 @@ export default function AdminApp() {
                           imageUrls: item.imageUrls?.length ? item.imageUrls : [item.imageUrl],
                           price: String(item.price),
                           onSale: item.onSale,
+                          soldOut: item.soldOut,
                           salePrice: item.salePrice == null ? "" : String(item.salePrice),
                           isFeatured: item.isFeatured,
                           status: item.status,
@@ -427,6 +460,18 @@ export default function AdminApp() {
                       className="mt-3 inline-flex rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/50 transition-colors"
                     >
                       Edit Item
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const confirmed = window.confirm(`Delete item #${item.id}? This cannot be undone.`);
+                        if (!confirmed) return;
+                        deleteMutation.mutate(item.id);
+                      }}
+                      disabled={deleteMutation.isPending}
+                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-destructive/40 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors disabled:opacity-60"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
                     </button>
                   </li>
                 ))}

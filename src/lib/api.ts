@@ -98,3 +98,19 @@ export async function updateStoreItem(id: number, payload: CreateStoreItemPayloa
   itemsCacheAt = 0;
   return data.id;
 }
+
+export async function deleteStoreItem(id: number, token: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/items/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const message = (data as { error?: string }).error || "Failed to delete item";
+    throw new Error(message);
+  }
+
+  itemsCache = null;
+  itemsCacheAt = 0;
+}

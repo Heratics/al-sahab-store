@@ -31,7 +31,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-primary/10 text-primary font-medium text-sm mb-6 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/90 backdrop-blur border border-primary/10 text-primary font-medium text-sm mb-6 shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
                 {t("Welcome to Aqaba's Premier Store", 'اهلا بكم في متجر العقبة المميز')}
                 <span className="arabic-text border-l border-primary/20 pl-2 ml-1 text-xs">أهلاً بكم في العقبة</span>
@@ -69,7 +69,7 @@ export function Hero() {
                 </Link>
                 <Link
                   href="/about"
-                  className="w-full sm:w-auto justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-foreground font-semibold text-base sm:text-lg shadow-md border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
+                  className="w-full sm:w-auto justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-card text-foreground font-semibold text-base sm:text-lg shadow-md border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
                 >
                   <span>{t('Visit Store', 'زيارة المعرض')}</span>
                   <span className="arabic-text text-primary text-sm">زيارة المعرض</span>
@@ -84,12 +84,12 @@ export function Hero() {
               initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="absolute top-10 right-0 w-4/5 h-[400px] rounded-3xl bg-gradient-to-br from-red-50 to-amber-50 shadow-2xl border border-white/60 p-6 overflow-hidden"
+              className="absolute top-10 right-0 w-4/5 h-[400px] rounded-3xl bg-gradient-to-br from-red-50 to-amber-50 dark:from-[hsl(350_30%_18%)] dark:to-[hsl(20_24%_16%)] shadow-2xl border border-white/60 dark:border-white/10 p-6 overflow-hidden"
             >
               {/* Stylized graphic representing a living room setting */}
               <div className="w-full h-full relative">
-                <div className="absolute bottom-0 left-10 w-64 h-32 bg-primary/10 rounded-t-3xl backdrop-blur-sm border-t border-x border-white/40"></div>
-                <div className="absolute bottom-0 right-20 w-24 h-48 bg-accent/20 rounded-t-full backdrop-blur-sm border border-white/50"></div>
+                <div className="absolute bottom-0 left-10 w-64 h-32 bg-primary/10 rounded-t-3xl backdrop-blur-sm border-t border-x border-white/40 dark:border-white/10"></div>
+                <div className="absolute bottom-0 right-20 w-24 h-48 bg-accent/20 rounded-t-full backdrop-blur-sm border border-white/50 dark:border-white/10"></div>
                 <div className="absolute top-10 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full border-[8px] border-primary/5"></div>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
                   <h3 className="font-display text-3xl font-bold text-primary/30">Al Sahab</h3>

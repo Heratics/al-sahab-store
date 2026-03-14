@@ -61,7 +61,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
   }
 
   return (
-    <section id="categories" className="py-24 bg-white relative">
+    <section id="categories" className="py-24 bg-background relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
@@ -133,7 +133,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
               <button
                 type="button"
                 onClick={() => pickCategory(null)}
-                className="px-6 py-2.5 bg-white text-primary rounded-full font-semibold text-sm hover:bg-accent hover:text-foreground transition-colors"
+                className="px-6 py-2.5 bg-card text-primary rounded-full border border-border font-semibold text-sm hover:bg-accent hover:text-foreground transition-colors"
               >
                 {t('See Featured Items', 'عرض المنتجات المميزة')}
               </button>
