@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { getStoreItems } from '@/lib/api';
+import { useUiPreferences } from '@/lib/ui-preferences';
 
 const fallbackGradients = [
   'gradient-product-1',
@@ -24,6 +25,7 @@ type ProductGridProps = {
 };
 
 export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchTerm = '' }: ProductGridProps) {
+  const { isArabic, t } = useUiPreferences();
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [imageIndexByItem, setImageIndexByItem] = useState<Record<number, number>>({});
 
@@ -76,11 +78,9 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
               <h2 className="text-sm font-bold tracking-widest text-primary uppercase">Staff Picks</h2>
             </div>
             <h3 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-              Featured Products
+              {t('Featured Products', 'المنتجات المميزة')}
             </h3>
-            <p className="arabic-text text-xl md:text-2xl font-bold text-muted-foreground mt-2">
-              المنتجات المميزة
-            </p>
+            <p className="arabic-text text-xl md:text-2xl font-bold text-muted-foreground mt-2">{t('Our Latest Collection', 'احدث تشكيلتنا')}</p>
           </div>
           {selectedCategory ? (
             <button
@@ -88,7 +88,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
               onClick={() => onCategoryChange(null)}
               className="hidden md:flex px-6 py-2.5 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors items-center gap-2"
             >
-              Clear Category Filter
+              {t('Clear Category Filter', 'مسح تصفية القسم')}
             </button>
           ) : null}
         </div>
@@ -99,35 +99,34 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search products by name, description, or category"
+              placeholder={t('Search products by name, description, or category', 'ابحث بالاسم او الوصف او القسم')}
               className="w-full rounded-xl border border-input bg-card pl-10 pr-3 py-2.5"
             />
           </label>
           <p className="text-sm text-muted-foreground md:text-right">
-            Showing {filteredItems.length} of {items.length} items
-            {selectedCategory ? ` in ${selectedCategory}` : ''}
+            {t('Showing', 'عرض')} {filteredItems.length} {t('of', 'من')} {items.length} {t('items', 'منتج')}
+            {selectedCategory ? ` ${t('in', 'في')} ${selectedCategory}` : ''}
           </p>
         </div>
 
         {/* Grid */}
         {isLoading ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
-            Loading store items...
+            {t('Loading store items...', 'جار تحميل المنتجات...')}
           </div>
         ) : isError ? (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center text-destructive">
-            Failed to load items. Check your API/database connection.
+            {t('Failed to load items. Check your API/database connection.', 'فشل تحميل المنتجات. تحقق من اتصال قاعدة البيانات.')}
           </div>
         ) : items.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-10 text-center">
-            <h4 className="text-2xl font-display font-bold text-foreground">Sorry, we're out of stock right now.</h4>
-            <p className="arabic-text text-lg text-muted-foreground mt-2">نعتذر، المنتجات غير متوفرة حالياً</p>
-            <p className="text-sm text-muted-foreground mt-3">Please check back soon for new arrivals.</p>
+            <h4 className="text-2xl font-display font-bold text-foreground">{t("Sorry, we're out of stock right now.", 'نعتذر، المنتجات غير متوفرة حاليا')}</h4>
+            <p className="text-sm text-muted-foreground mt-3">{t('Please check back soon for new arrivals.', 'يرجى العودة لاحقا لوصول منتجات جديدة.')}</p>
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-10 text-center">
-            <h4 className="text-2xl font-display font-bold text-foreground">No matching products found.</h4>
-            <p className="text-sm text-muted-foreground mt-3">Try another search term or clear the category filter.</p>
+            <h4 className="text-2xl font-display font-bold text-foreground">{t('No matching products found.', 'لا توجد منتجات مطابقة.')}</h4>
+            <p className="text-sm text-muted-foreground mt-3">{t('Try another search term or clear the category filter.', 'جرب كلمة بحث اخرى او امسح تصفية القسم.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
@@ -195,18 +194,18 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
 
                 <div className="grow flex flex-col px-1">
                   <h4 className="font-bold text-lg text-foreground leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                    {product.nameEn}
+                    {isArabic ? product.nameAr : product.nameEn}
                   </h4>
                   <h5 className="arabic-text text-base text-muted-foreground mb-2 line-clamp-1">
-                    {product.nameAr}
+                    {isArabic ? product.nameEn : product.nameAr}
                   </h5>
                   <p className="text-sm text-foreground/70 mb-4 line-clamp-2">
-                    {product.descEn}
+                    {isArabic ? product.descAr : product.descEn}
                   </p>
 
                   <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
                     <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground uppercase font-semibold">Price</span>
+                      <span className="text-xs text-muted-foreground uppercase font-semibold">{t('Price', 'السعر')}</span>
                       {product.onSale && product.salePrice != null ? (
                         <span className="font-bold text-lg text-primary">
                           ${Number(product.salePrice).toFixed(2)}
@@ -239,7 +238,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
             }}
             className="w-full py-3 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors"
           >
-            View All Store Items
+            {t('View All Store Items', 'عرض كل المنتجات')}
           </button>
         </div>
       </div>

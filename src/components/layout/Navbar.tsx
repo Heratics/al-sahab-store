@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Menu, X, Phone, MapPin, Search } from 'lucide-react';
+import { Menu, X, Phone, MapPin, Search, SlidersHorizontal, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useUiPreferences } from '@/lib/ui-preferences';
 
 export function Navbar() {
   const [, setLocation] = useLocation();
+  const { language, setLanguage, theme, toggleTheme, t, isArabic } = useUiPreferences();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
 
   useEffect(() => {
@@ -18,15 +21,28 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { name: 'Home', href: '/', ar: 'الرئيسية' },
-    { name: 'Catalog', href: '/catalog', ar: 'الأقسام والمنتجات' },
-    { name: 'About', href: '/about', ar: 'من نحن' },
+    { name: t('Home', 'الرئيسية'), href: '/' },
+    { name: t('Catalog', 'الاقسام والمنتجات'), href: '/catalog' },
+    { name: t('About', 'من نحن'), href: '/about' },
   ];
 
   const runCatalogSearch = () => {
     const query = searchInput.trim();
-    const target = query ? `/catalog?q=${encodeURIComponent(query)}` : '/catalog';
-    setLocation(target);
+    sessionStorage.setItem('catalog-search-query', query);
+    sessionStorage.setItem('catalog-search-pending', '1');
+
+    setLocation('/catalog');
+    window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      if (query) {
+        url.searchParams.set('q', query);
+      } else {
+        url.searchParams.delete('q');
+      }
+      window.history.replaceState({}, '', url.toString());
+      window.dispatchEvent(new Event('catalog-search'));
+    }, 0);
+
     setMobileMenuOpen(false);
   };
 
@@ -36,6 +52,12 @@ export function Navbar() {
       runCatalogSearch();
     }
   };
+
+  useEffect(() => {
+    const closeSettings = () => setSettingsOpen(false);
+    window.addEventListener('scroll', closeSettings);
+    return () => window.removeEventListener('scroll', closeSettings);
+  }, []);
 
   return (
     <header 
@@ -75,21 +97,18 @@ export function Navbar() {
                 <span className="text-sm font-medium text-foreground/80 group-hover:text-primary transition-colors">
                   {link.name}
                 </span>
-                <span className="arabic-text text-xs text-muted-foreground group-hover:text-primary/70 transition-colors opacity-0 group-hover:opacity-100 absolute -bottom-3">
-                  {link.ar}
-                </span>
                 <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full group-hover:left-0 rounded-full" />
               </Link>
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-2 rounded-full border border-border bg-white/80 backdrop-blur px-2 py-1 w-[320px]">
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-border bg-white/80 dark:bg-card/80 backdrop-blur px-2 py-1 w-[320px]">
             <Search className="w-4 h-4 text-muted-foreground ml-2" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search products..."
+              placeholder={t('Search products...', 'ابحث عن المنتجات...')}
               className="flex-1 bg-transparent text-sm outline-none"
             />
             <button
@@ -97,12 +116,12 @@ export function Navbar() {
               onClick={runCatalogSearch}
               className="px-3 py-1.5 rounded-full bg-primary text-white text-xs font-semibold hover:opacity-90"
             >
-              Search
+              {t('Search', 'بحث')}
             </button>
           </div>
 
           {/* Contact / CTA Desktop */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3 relative">
             <a 
               href="https://www.google.com/maps/place/%D8%A8%D9%88%D8%A7%D8%A8%D8%A9+%D8%A7%D9%84%D8%B4%D8%B9%D8%A8+%D9%84%D9%84%D8%AA%D8%AE%D9%81%D9%8A%D8%B6%D8%A7%D8%AA+%D8%A7%D9%84%D8%B9%D9%82%D8%A8%D8%A9%E2%80%AD/@29.5550022,35.0240359,360m/data=!3m1!1e3!4m6!3m5!1s0x15006f00648a785d:0x87defb259c2dd3!8m2!3d29.554538!4d35.023887!16s%2Fg%2F11x989cn75" 
               target="_blank" 
@@ -117,8 +136,53 @@ export function Navbar() {
               className="px-5 py-2.5 rounded-full bg-primary text-white font-medium text-sm hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
             >
               <Phone className="w-4 h-4" />
-              <span>Contact Us</span>
+              <span>{t('Contact Us', 'اتصل بنا')}</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((prev) => !prev)}
+              className="w-10 h-10 rounded-full bg-secondary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors shadow-sm"
+              aria-label={t('Open settings', 'فتح الاعدادات')}
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </button>
+
+            {settingsOpen ? (
+              <div className="absolute top-12 right-0 w-60 rounded-xl border border-border bg-card shadow-lg p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{t('Dark Mode', 'الوضع الداكن')}</span>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted/50"
+                  >
+                    {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                    {theme === 'dark' ? t('On', 'مفعل') : t('Off', 'مغلق')}
+                  </button>
+                </div>
+
+                <div>
+                  <span className="text-sm font-medium block mb-2">{t('Language', 'اللغة')}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLanguage('en')}
+                      className={`rounded-lg border px-2 py-1.5 text-xs ${language === 'en' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLanguage('ar')}
+                      className={`rounded-lg border px-2 py-1.5 text-xs ${language === 'ar' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      العربية
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -147,7 +211,7 @@ export function Navbar() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={onSearchKeyDown}
-                  placeholder="Search products..."
+                  placeholder={t('Search products...', 'ابحث عن المنتجات...')}
                   className="flex-1 bg-transparent text-sm outline-none"
                 />
                 <button
@@ -155,7 +219,7 @@ export function Navbar() {
                   onClick={runCatalogSearch}
                   className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold"
                 >
-                  Go
+                  {t('Go', 'اذهب')}
                 </button>
               </div>
 
@@ -167,17 +231,47 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <span className="font-medium text-foreground">{link.name}</span>
-                  <span className="arabic-text text-primary font-bold">{link.ar}</span>
                 </Link>
               ))}
               <div className="h-px bg-border/50 my-2" />
+
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{t('Dark Mode', 'الوضع الداكن')}</span>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted/50"
+                  >
+                    {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                    {theme === 'dark' ? t('On', 'مفعل') : t('Off', 'مغلق')}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('en')}
+                    className={`rounded-lg border px-2 py-1.5 text-xs ${language === 'en' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('ar')}
+                    className={`rounded-lg border px-2 py-1.5 text-xs ${language === 'ar' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                  >
+                    العربية
+                  </button>
+                </div>
+              </div>
+
               <Link
                 href="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 rounded-xl bg-primary text-white font-medium flex items-center justify-center gap-2 shadow-md"
               >
                 <Phone className="w-5 h-5" />
-                <span>Contact Us / اتصل بنا</span>
+                <span>{isArabic ? 'اتصل بنا' : 'Contact Us'}</span>
               </Link>
             </div>
           </motion.div>

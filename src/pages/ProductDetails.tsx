@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { getStoreItemById, getStoreItems } from "@/lib/api";
+import { useUiPreferences } from "@/lib/ui-preferences";
 
 function shuffle<T>(arr: T[]): T[] {
   const clone = [...arr];
@@ -18,6 +19,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function ProductDetails() {
+  const { isArabic, t } = useUiPreferences();
   const [location] = useLocation();
   const id = Number(location.split("/").pop() ?? NaN);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -66,20 +68,20 @@ export default function ProductDetails() {
       <Navbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to store
+          <ArrowLeft className="w-4 h-4" /> {t('Back to store', 'العودة للمتجر')}
         </Link>
 
         {itemQuery.isLoading ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
-            Loading item details...
+            {t('Loading item details...', 'جار تحميل تفاصيل المنتج...')}
           </div>
         ) : itemQuery.isError ? (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center text-destructive">
-            Failed to load this item.
+            {t('Failed to load this item.', 'فشل تحميل هذا المنتج.')}
           </div>
         ) : !itemQuery.data ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
-            Item not found.
+            {t('Item not found.', 'المنتج غير موجود.')}
           </div>
         ) : (
           <section className="space-y-12">
@@ -133,15 +135,15 @@ export default function ProductDetails() {
                 <div className="inline-flex px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-semibold mb-4">
                   {itemQuery.data.category}
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">{itemQuery.data.nameEn}</h1>
-                <p className="arabic-text text-xl text-muted-foreground mt-2">{itemQuery.data.nameAr}</p>
+                <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">{isArabic ? itemQuery.data.nameAr : itemQuery.data.nameEn}</h1>
+                <p className="arabic-text text-xl text-muted-foreground mt-2">{isArabic ? itemQuery.data.nameEn : itemQuery.data.nameAr}</p>
 
                 <div className="mt-6">
                   {itemQuery.data.onSale && itemQuery.data.salePrice != null ? (
                     <div className="flex items-center gap-3">
                       <span className="text-3xl font-bold text-primary">${Number(itemQuery.data.salePrice).toFixed(2)}</span>
                       <span className="text-lg text-muted-foreground line-through">${Number(itemQuery.data.price).toFixed(2)}</span>
-                      <span className="text-xs font-bold px-2 py-1 rounded-full bg-primary text-primary-foreground">On Sale</span>
+                      <span className="text-xs font-bold px-2 py-1 rounded-full bg-primary text-primary-foreground">{t('On Sale', 'عرض خاص')}</span>
                     </div>
                   ) : (
                     <span className="text-3xl font-bold text-foreground">${Number(itemQuery.data.price).toFixed(2)}</span>
@@ -150,25 +152,25 @@ export default function ProductDetails() {
 
                 <div className="mt-8 space-y-4">
                   <div>
-                    <h2 className="font-semibold text-foreground mb-1">Description</h2>
-                    <p className="text-foreground/80">{itemQuery.data.descEn}</p>
+                    <h2 className="font-semibold text-foreground mb-1">{t('Description', 'الوصف')}</h2>
+                    <p className="text-foreground/80">{isArabic ? itemQuery.data.descAr : itemQuery.data.descEn}</p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">الوصف</h3>
-                    <p className="arabic-text text-muted-foreground">{itemQuery.data.descAr}</p>
+                    <h3 className="font-semibold text-foreground mb-1">{t('Arabic', 'English')}</h3>
+                    <p className="arabic-text text-muted-foreground">{isArabic ? itemQuery.data.descEn : itemQuery.data.descAr}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <section>
-              <h2 className="text-2xl font-display font-bold mb-5">You May Also Like</h2>
+              <h2 className="text-2xl font-display font-bold mb-5">{t('You May Also Like', 'قد يعجبك ايضا')}</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {relatedItems.map((related) => (
                   <article key={related.id} className="rounded-2xl border border-border bg-card overflow-hidden group">
                     <img src={related.imageUrls?.[0] || related.imageUrl} alt={related.nameEn} className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="p-4">
-                      <h3 className="font-semibold line-clamp-1">{related.nameEn}</h3>
+                      <h3 className="font-semibold line-clamp-1">{isArabic ? related.nameAr : related.nameEn}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-1 mb-2">{related.category}</p>
                       <p className="font-bold text-primary mb-3">
                         ${Number((related.onSale && related.salePrice != null) ? related.salePrice : related.price).toFixed(2)}
@@ -177,7 +179,7 @@ export default function ProductDetails() {
                         href={`/item/${related.id}`}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-80"
                       >
-                        View Item <ArrowRight className="w-4 h-4" />
+                        {t('View Item', 'عرض المنتج')} <ArrowRight className="w-4 h-4" />
                       </Link>
                     </div>
                   </article>

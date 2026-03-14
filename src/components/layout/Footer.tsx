@@ -1,7 +1,10 @@
 import { Link } from 'wouter';
 import { MapPin, Phone, Clock, Instagram, Facebook, MessageCircle } from 'lucide-react';
+import { useUiPreferences } from '@/lib/ui-preferences';
 
 export function Footer() {
+  const { t, isArabic } = useUiPreferences();
+
   return (
     <footer className="bg-foreground text-white pt-16 pb-8 relative overflow-hidden">
       {/* Decorative subtle pattern overlay */}
@@ -29,7 +32,10 @@ export function Footer() {
               </div>
             </div>
             <p className="text-white/70 text-sm leading-relaxed max-w-xs mt-4">
-              Your complete home solution in Aqaba. From luxurious furniture to daily household essentials, we provide quality items for every corner of your home.
+              {t(
+                'Your complete home solution in Aqaba. From luxurious furniture to daily household essentials, we provide quality items for every corner of your home.',
+                'حلول منزلك الكاملة في العقبة. من الاثاث الفاخر الى المستلزمات اليومية، نوفر منتجات عالية الجودة لكل زاوية في منزلك.'
+              )}
             </p>
             <div className="flex gap-3 pt-2">
               <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all">
@@ -44,8 +50,7 @@ export function Footer() {
           {/* Quick Links */}
           <div>
             <h4 className="font-bold text-lg mb-6 flex items-center gap-2">
-              <span>Quick Links</span>
-              <span className="arabic-text text-accent text-sm font-normal">روابط سريعة</span>
+              <span>{t('Quick Links', 'روابط سريعة')}</span>
             </h4>
             <ul className="space-y-3">
               <li>
@@ -72,8 +77,7 @@ export function Footer() {
           {/* Contact Info */}
           <div>
             <h4 className="font-bold text-lg mb-6 flex items-center gap-2">
-              <span>Visit Us</span>
-              <span className="arabic-text text-accent text-sm font-normal">زورونا</span>
+              <span>{t('Visit Us', 'زورونا')}</span>
             </h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-white/70 group">
@@ -92,15 +96,15 @@ export function Footer() {
                 <Phone className="w-5 h-5 text-accent shrink-0" />
                 <div className="flex flex-col">
                   <span>+962 7 0000 0000</span>
-                  <span className="text-xs text-white/50">Call or WhatsApp</span>
+                  <span className="text-xs text-white/50">{t('Call or WhatsApp', 'اتصال او واتساب')}</span>
                 </div>
               </li>
               <li className="flex items-start gap-3 text-white/70">
                 <Clock className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div className="flex flex-col">
-                  <span>Saturday - Thursday</span>
+                  <span>{t('Saturday - Thursday', 'السبت - الخميس')}</span>
                   <span>9:00 AM - 10:00 PM</span>
-                  <span className="mt-1 text-sm text-white/50 arabic-text">السبت - الخميس</span>
+                  <span className="mt-1 text-sm text-white/50 arabic-text">{isArabic ? '9:00 صباحا - 10:00 مساء' : 'السبت - الخميس'}</span>
                 </div>
               </li>
             </ul>
@@ -110,11 +114,11 @@ export function Footer() {
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-white/50 text-sm">
-            &copy; {new Date().getFullYear()} Al Sahab Store. All rights reserved.
+            &copy; {new Date().getFullYear()} {t('Al Sahab Store. All rights reserved.', 'متجر الشعب. جميع الحقوق محفوظة.')}
           </p>
           <div className="flex gap-4 text-sm text-white/50">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-white transition-colors">{t('Privacy Policy', 'سياسة الخصوصية')}</a>
+            <a href="#" className="hover:text-white transition-colors">{t('Terms of Service', 'شروط الاستخدام')}</a>
           </div>
         </div>
       </div>

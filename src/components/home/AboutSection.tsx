@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Clock, Store, Navigation } from 'lucide-react';
+import { useUiPreferences } from '@/lib/ui-preferences';
 
 export function AboutSection() {
+  const { t } = useUiPreferences();
+
   return (
     <section id="about" className="py-24 bg-white relative overflow-hidden">
       {/* Decorative background element */}
@@ -24,14 +27,17 @@ export function AboutSection() {
                 </div>
                 
                 <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-                  Visit Al Sahab Store
+                  {t('Visit Al Sahab Store', 'زوروا متجر الشعب')}
                 </h2>
                 <h3 className="arabic-text text-3xl text-primary font-bold mb-6">
-                  مرحباً بكم في معرض الشعب
+                  {t('Welcome to Al Sahab Showroom', 'مرحبا بكم في معرض الشعب')}
                 </h3>
                 
                 <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                  Located in the heart of Aqaba, Al Sahab offers a massive showroom filled with premium furniture, top-brand appliances, and everything you need for your home. Our dedicated team is ready to assist you in finding exactly what you're looking for.
+                  {t(
+                    "Located in the heart of Aqaba, Al Sahab offers a massive showroom filled with premium furniture, top-brand appliances, and everything you need for your home. Our dedicated team is ready to assist you in finding exactly what you're looking for.",
+                    'يقع متجر الشعب في قلب العقبة ويقدم صالة عرض كبيرة مليئة بالاثاث الفاخر والاجهزة المميزة وكل ما تحتاجه لمنزلك. فريقنا جاهز لمساعدتك في العثور على ما تبحث عنه تماما.'
+                  )}
                 </p>
 
                 <div className="space-y-6">
@@ -50,8 +56,8 @@ export function AboutSection() {
                       <Phone className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground text-lg">Contact <span className="arabic-text text-sm font-normal text-muted-foreground ml-2">اتصل بنا</span></h4>
-                      <p className="text-muted-foreground mt-1">+962 7 0000 0000<br/>Available on Phone & WhatsApp</p>
+                      <h4 className="font-bold text-foreground text-lg">{t('Contact', 'اتصل بنا')}</h4>
+                      <p className="text-muted-foreground mt-1">+962 7 0000 0000<br/>{t('Available on Phone & WhatsApp', 'متاح عبر الهاتف والواتساب')}</p>
                     </div>
                   </div>
 
@@ -60,8 +66,8 @@ export function AboutSection() {
                       <Clock className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-foreground text-lg">Hours <span className="arabic-text text-sm font-normal text-muted-foreground ml-2">أوقات العمل</span></h4>
-                      <p className="text-muted-foreground mt-1">Sat - Thu: 9:00 AM - 10:00 PM<br/>Friday: 4:00 PM - 10:00 PM</p>
+                      <h4 className="font-bold text-foreground text-lg">{t('Hours', 'اوقات العمل')}</h4>
+                      <p className="text-muted-foreground mt-1">{t('Sat - Thu: 9:00 AM - 10:00 PM', 'السبت - الخميس: 9:00 صباحا - 10:00 مساء')}<br/>{t('Friday: 4:00 PM - 10:00 PM', 'الجمعة: 4:00 مساء - 10:00 مساء')}</p>
                     </div>
                   </div>
                 </div>
@@ -74,8 +80,8 @@ export function AboutSection() {
                     className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 transition-all"
                   >
                     <Navigation className="w-5 h-5" />
-                    Get Directions
-                    <span className="arabic-text text-sm border-l border-white/30 pl-2 ml-1">احصل على الاتجاهات</span>
+                    {t('Get Directions', 'احصل على الاتجاهات')}
+                    <span className="arabic-text text-sm border-l border-white/30 pl-2 ml-1">{t('Open map', 'افتح الخريطة')}</span>
                   </a>
                 </div>
               </motion.div>
@@ -98,7 +104,7 @@ export function AboutSection() {
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary mb-3 shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                   <MapPin className="w-8 h-8" />
                 </div>
-                <span className="text-white font-bold text-xl">Open in Google Maps</span>
+                <span className="text-white font-bold text-xl">{t('Open in Google Maps', 'افتح في خرائط جوجل')}</span>
               </a>
 
               {/* Styled map graphic */}

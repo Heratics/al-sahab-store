@@ -110,6 +110,38 @@
   --shadow-2xl: 0px 40px 80px -16px rgba(50, 0, 10, 0.2);
 }
 
+.dark {
+  --background: 222 28% 10%;
+  --foreground: 36 28% 95%;
+
+  --border: 220 14% 24%;
+  --input: 220 14% 24%;
+  --ring: 349 70% 50%;
+
+  --card: 222 24% 14%;
+  --card-foreground: 36 28% 95%;
+  --card-border: 220 14% 22%;
+
+  --popover: 222 24% 14%;
+  --popover-foreground: 36 28% 95%;
+  --popover-border: 220 14% 22%;
+
+  --primary: 350 76% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 18% 18%;
+  --secondary-foreground: 35 40% 92%;
+
+  --muted: 220 18% 16%;
+  --muted-foreground: 32 10% 72%;
+
+  --accent: 43 92% 60%;
+  --accent-foreground: 220 35% 12%;
+
+  --destructive: 0 78% 58%;
+  --destructive-foreground: 0 0% 100%;
+}
+
 @layer base {
   * {
     @apply border-border;

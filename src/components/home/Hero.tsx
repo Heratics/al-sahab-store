@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
 import { Link } from 'wouter';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { useUiPreferences } from '@/lib/ui-preferences';
 
 export function Hero() {
+  const { t } = useUiPreferences();
+
   return (
     <section id="home" className="relative min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden">
       {/* Background Image & Overlay */}
@@ -30,14 +33,14 @@ export function Hero() {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-primary/10 text-primary font-medium text-sm mb-6 shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-                Welcome to Aqaba's Premier Store
+                {t("Welcome to Aqaba's Premier Store", 'اهلا بكم في متجر العقبة المميز')}
                 <span className="arabic-text border-l border-primary/20 pl-2 ml-1 text-xs">أهلاً بكم في العقبة</span>
               </div>
               
               <h1 className="text-5xl md:text-7xl font-display font-extrabold text-foreground leading-[1.1] tracking-tight mb-4">
-                Everything for <br/>
+                {t('Everything for', 'كل شيء من اجل')} <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent relative">
-                  Your Home
+                  {t('Your Home', 'منزلك')}
                   <svg className="absolute -bottom-2 left-0 w-full h-3 text-accent/30" viewBox="0 0 100 20" preserveAspectRatio="none">
                     <path d="M0,10 Q50,20 100,0" stroke="currentColor" fill="none" strokeWidth="4" strokeLinecap="round"/>
                   </svg>
@@ -49,7 +52,10 @@ export function Hero() {
               </h2>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed max-w-xl">
-                From elegant furniture and modern appliances to daily household essentials. Discover quality items that make your house a home, all in one place.
+                {t(
+                  'From elegant furniture and modern appliances to daily household essentials. Discover quality items that make your house a home, all in one place.',
+                  'من الاثاث الانيق والاجهزة الحديثة الى مستلزمات المنزل اليومية. اكتشف منتجات عالية الجودة تجعل بيتك اكثر راحة في مكان واحد.'
+                )}
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -58,14 +64,14 @@ export function Hero() {
                   className="px-8 py-4 rounded-full bg-primary text-white font-semibold text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 hover:bg-primary/95 transition-all duration-300 flex items-center gap-2 group"
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  <span>Browse Categories</span>
+                  <span>{t('Browse Categories', 'تصفح الاقسام')}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
                   href="/about"
                   className="px-8 py-4 rounded-full bg-white text-foreground font-semibold text-lg shadow-md border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
                 >
-                  <span>Visit Store</span>
+                  <span>{t('Visit Store', 'زيارة المعرض')}</span>
                   <span className="arabic-text text-primary text-sm">زيارة المعرض</span>
                 </Link>
               </div>
