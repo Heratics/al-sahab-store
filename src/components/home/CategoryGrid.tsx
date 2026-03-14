@@ -30,7 +30,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
 
   if (compactWhenSelected && activeCategory) {
     return (
-      <section id="categories" className="sticky top-20 z-40 border-y border-border bg-background/95 backdrop-blur py-3">
+      <section id="categories" className="sticky top-16 sm:top-20 z-40 border-y border-border bg-background/95 backdrop-blur py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <button
