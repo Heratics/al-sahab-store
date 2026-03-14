@@ -6,6 +6,7 @@ export type StoreItem = {
   descEn: string;
   descAr: string;
   imageUrl: string;
+  imageUrls: string[];
   price: number;
   onSale: boolean;
   salePrice: number | null;
@@ -20,7 +21,7 @@ export type CreateStoreItemPayload = {
   category: string;
   descEn: string;
   descAr: string;
-  imageUrl: string;
+  imageUrls: string[];
   price: number;
   onSale: boolean;
   salePrice: number | null;

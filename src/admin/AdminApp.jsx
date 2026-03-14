@@ -1,9 +1,21 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
-import { createStoreItem, getAdminItems } from "@/lib/api";
+import { createStoreItem, getAdminItems, updateStoreItem } from "@/lib/api";
 import { adminLogin } from "@/lib/api";
 import { LogIn, LogOut } from "lucide-react";
+import { categories } from "@/data/store-data";
+
+const MAX_IMAGES = 10;
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
+}
 
 const defaultForm = {
   nameEn: "",
@@ -11,7 +23,7 @@ const defaultForm = {
   category: "",
   descEn: "",
   descAr: "",
-  imageUrl: "",
+  imageUrls: [""],
   price: "",
   onSale: false,
   salePrice: "",
@@ -23,6 +35,7 @@ export default function AdminApp() {
   const queryClient = useQueryClient();
   const [token, setToken] = useState(null);
   const [form, setForm] = useState(defaultForm);
+  const [editingItemId, setEditingItemId] = useState(null);
   const [notice, setNotice] = useState("");
 
   const itemsQuery = useQuery({
@@ -35,8 +48,25 @@ export default function AdminApp() {
     mutationFn: (payload) => createStoreItem(payload, token),
     onSuccess: (id) => {
       setForm(defaultForm);
+      setEditingItemId(null);
       setNotice(`Item #${id} created successfully.`);
       queryClient.invalidateQueries({ queryKey: ["admin-items"] });
+      queryClient.invalidateQueries({ queryKey: ["store-items"] });
+    },
+    onError: (error) => {
+      setNotice(error.message);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateStoreItem(id, payload, token),
+    onSuccess: (id) => {
+      setForm(defaultForm);
+      setEditingItemId(null);
+      setNotice(`Item #${id} updated successfully.`);
+      queryClient.invalidateQueries({ queryKey: ["admin-items"] });
+      queryClient.invalidateQueries({ queryKey: ["store-items"] });
+      queryClient.invalidateQueries({ queryKey: ["store-item"] });
     },
     onError: (error) => {
       setNotice(error.message);
@@ -47,9 +77,63 @@ export default function AdminApp() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const onImageUrlInput = (index, value) => {
+    setForm((prev) => {
+      const nextImageUrls = [...prev.imageUrls];
+      nextImageUrls[index] = value;
+      return { ...prev, imageUrls: nextImageUrls };
+    });
+  };
+
+  const addImageUrlField = () => {
+    setForm((prev) => {
+      if (prev.imageUrls.length >= MAX_IMAGES) return prev;
+      return { ...prev, imageUrls: [...prev.imageUrls, ""] };
+    });
+  };
+
+  const removeImageUrlField = (index) => {
+    setForm((prev) => {
+      const nextImageUrls = prev.imageUrls.filter((_, imageIndex) => imageIndex !== index);
+      return { ...prev, imageUrls: nextImageUrls.length ? nextImageUrls : [""] };
+    });
+  };
+
+  const onImageFileUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+
+    if (!files.length) return;
+
+    try {
+      const uploadedImages = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
+      setForm((prev) => {
+        const current = prev.imageUrls.map((url) => url.trim()).filter(Boolean);
+        const combined = [...current, ...uploadedImages].slice(0, MAX_IMAGES);
+        if (combined.length < current.length + uploadedImages.length) {
+          setNotice(`Only the first ${MAX_IMAGES} images were kept.`);
+        }
+        return { ...prev, imageUrls: combined.length ? combined : [""] };
+      });
+    } catch (error) {
+      setNotice(error.message || "Failed to upload one or more images.");
+    }
+  };
+
   const onSubmit = (event) => {
     event.preventDefault();
     setNotice("");
+
+    const imageUrls = form.imageUrls.map((value) => value.trim()).filter(Boolean);
+    if (imageUrls.length < 1) {
+      setNotice("Please add at least 1 image.");
+      return;
+    }
+
+    if (imageUrls.length > MAX_IMAGES) {
+      setNotice(`Maximum ${MAX_IMAGES} images are allowed.`);
+      return;
+    }
 
     const price = Number(form.price);
     const salePrice = form.onSale && form.salePrice !== "" ? Number(form.salePrice) : null;
@@ -71,11 +155,19 @@ export default function AdminApp() {
       }
     }
 
-    createMutation.mutate({
+    const payload = {
       ...form,
+      imageUrls,
       price,
       salePrice,
-    });
+    };
+
+    if (editingItemId) {
+      updateMutation.mutate({ id: editingItemId, payload });
+      return;
+    }
+
+    createMutation.mutate(payload);
   };
 
   if (!token) {
@@ -103,7 +195,7 @@ export default function AdminApp() {
 
         <section className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6">
           <form onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
-            <h2 className="text-xl font-bold">Add New Item</h2>
+            <h2 className="text-xl font-bold">{editingItemId ? `Edit Item #${editingItemId}` : "Add New Item"}</h2>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <label className="block">
@@ -128,25 +220,62 @@ export default function AdminApp() {
 
             <label className="block">
               <span className="text-sm font-semibold">Category</span>
-              <input
+              <select
                 value={form.category}
                 onChange={(e) => onInput("category", e.target.value)}
                 required
-                placeholder="Furniture, Appliances..."
                 className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2"
-              />
+              >
+                <option value="" disabled>Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.nameEn}>{category.nameEn}</option>
+                ))}
+              </select>
             </label>
 
-            <label className="block">
-              <span className="text-sm font-semibold">Image URL</span>
-              <input
-                value={form.imageUrl}
-                onChange={(e) => onInput("imageUrl", e.target.value)}
-                required
-                type="url"
-                className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2"
-              />
-            </label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">Item Images (1-10)</span>
+                <button
+                  type="button"
+                  onClick={addImageUrlField}
+                  disabled={form.imageUrls.length >= MAX_IMAGES}
+                  className="text-xs font-medium rounded-md border border-border px-2 py-1 hover:bg-muted/50 disabled:opacity-50"
+                >
+                  + Add URL
+                </button>
+              </div>
+
+              {form.imageUrls.map((url, index) => (
+                <div key={`image-url-${index}`} className="flex items-center gap-2">
+                  <input
+                    value={url}
+                    onChange={(e) => onImageUrlInput(index, e.target.value)}
+                    type="text"
+                    placeholder={`Image URL ${index + 1}`}
+                    className="w-full rounded-xl border border-input bg-background px-3 py-2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImageUrlField(index)}
+                    className="rounded-lg border border-border px-2 py-2 text-xs hover:bg-muted/50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+
+              <label className="block">
+                <span className="text-xs text-muted-foreground">Or upload image files</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={onImageFileUpload}
+                  className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <label className="block">
@@ -230,11 +359,25 @@ export default function AdminApp() {
               </label>
             </div>
 
-            <button disabled={createMutation.isPending} type="submit"
+            <button disabled={createMutation.isPending || updateMutation.isPending} type="submit"
               className="w-full rounded-xl bg-primary text-primary-foreground py-3 font-semibold hover:opacity-90 disabled:opacity-60 inline-flex items-center justify-center gap-2">
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" /> }
-              Save Item
+              {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" /> }
+              {editingItemId ? "Update Item" : "Save Item"}
             </button>
+
+            {editingItemId ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setForm(defaultForm);
+                  setEditingItemId(null);
+                  setNotice("");
+                }}
+                className="w-full rounded-xl border border-border py-3 font-semibold hover:bg-muted/50 transition-colors"
+              >
+                Cancel Editing
+              </button>
+            ) : null}
 
             {notice ? <p className="text-sm text-primary">{notice}</p> : null}
           </form>
@@ -246,7 +389,7 @@ export default function AdminApp() {
             ) : itemsQuery.isError ? (
               <p className="text-sm text-destructive">{itemsQuery.error.message}</p>
             ) : (
-              <ul className="space-y-3 max-h-[600px] overflow-auto pr-1">
+              <ul className="space-y-3 max-h-150 overflow-auto pr-1">
                 {(itemsQuery.data || []).map((item) => (
                   <li key={item.id} className="rounded-xl border border-border p-3 bg-background">
                     <p className="font-semibold">{item.nameEn}</p>
@@ -262,6 +405,29 @@ export default function AdminApp() {
                         <span className="font-semibold text-foreground">${Number(item.price).toFixed(2)}</span>
                       )}
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingItemId(item.id);
+                        setForm({
+                          nameEn: item.nameEn,
+                          nameAr: item.nameAr,
+                          category: item.category,
+                          descEn: item.descEn,
+                          descAr: item.descAr,
+                          imageUrls: item.imageUrls?.length ? item.imageUrls : [item.imageUrl],
+                          price: String(item.price),
+                          onSale: item.onSale,
+                          salePrice: item.salePrice == null ? "" : String(item.salePrice),
+                          isFeatured: item.isFeatured,
+                          status: item.status,
+                        });
+                        setNotice(`Editing item #${item.id}`);
+                      }}
+                      className="mt-3 inline-flex rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/50 transition-colors"
+                    >
+                      Edit Item
+                    </button>
                   </li>
                 ))}
               </ul>

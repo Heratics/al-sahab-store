@@ -22,6 +22,12 @@ export async function getStoreItems(): Promise<StoreItem[]> {
   return data.items;
 }
 
+export async function getStoreItemById(id: number): Promise<StoreItem> {
+  const response = await fetch(`${API_BASE_URL}/api/items/${id}`);
+  const data = await parseResponse<{ item: StoreItem }>(response);
+  return data.item;
+}
+
 export async function adminLogin(username: string, password: string): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
     method: "POST",
@@ -43,6 +49,16 @@ export async function getAdminItems(token: string): Promise<StoreItem[]> {
 export async function createStoreItem(payload: CreateStoreItemPayload, token: string): Promise<number> {
   const response = await fetch(`${API_BASE_URL}/api/admin/items`, {
     method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseResponse<{ id: number }>(response);
+  return data.id;
+}
+
+export async function updateStoreItem(id: number, payload: CreateStoreItemPayload, token: string): Promise<number> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/items/${id}`, {
+    method: "PUT",
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });

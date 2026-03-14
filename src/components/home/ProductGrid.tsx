@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { ShoppingBag, Star, ArrowRight } from 'lucide-react';
 import { getStoreItems } from '@/lib/api';
 
@@ -71,9 +72,9 @@ export function ProductGrid() {
               className="group flex flex-col"
             >
               <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-md transition-shadow">
-                {product.imageUrl ? (
+                {(product.imageUrls?.[0] || product.imageUrl) ? (
                   <img
-                    src={product.imageUrl}
+                    src={product.imageUrls?.[0] || product.imageUrl}
                     alt={product.nameEn}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
@@ -120,12 +121,12 @@ export function ProductGrid() {
                       <span className="font-bold text-lg text-foreground">${Number(product.price).toFixed(2)}</span>
                     )}
                   </div>
-                  <a 
-                    href="#about"
+                  <Link
+                    href={`/item/${product.id}`}
                     className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors"
                   >
                     <ArrowRight className="w-4 h-4" />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </motion.div>

@@ -13,9 +13,15 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const MAX_IMAGES = 10;
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is required");
+
+const imageInputSchema = z.string().max(5_000_000).refine(
+  (value) => value.startsWith("https://") || value.startsWith("http://") || value.startsWith("data:image/"),
+  "Each image must be a valid URL or an uploaded image data URL"
+);
 
 const productSchema = z.object({
   nameEn: z.string().min(2).max(120),
@@ -23,7 +29,7 @@ const productSchema = z.object({
   category: z.string().min(2).max(80),
   descEn: z.string().min(10).max(1000),
   descAr: z.string().min(10).max(1000),
-  imageUrl: z.string().url().max(500),
+  imageUrls: z.array(imageInputSchema).min(1).max(MAX_IMAGES),
   price: z.number().positive().max(99999999.99),
   onSale: z.boolean().optional().default(false),
   salePrice: z.number().positive().max(99999999.99).nullable().optional(),
@@ -52,7 +58,25 @@ const productSchema = z.object({
 
 const corsOrigin = process.env.CORS_ORIGIN?.split(",").map((v) => v.trim()).filter(Boolean) || "*";
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "25mb" }));
+
+function parseImageUrls(imageUrlsJson, fallbackImageUrl) {
+  try {
+    const parsed = typeof imageUrlsJson === "string" ? JSON.parse(imageUrlsJson) : null;
+    if (Array.isArray(parsed)) {
+      const cleaned = parsed.filter((value) => typeof value === "string" && value.length > 0);
+      if (cleaned.length > 0) return cleaned.slice(0, MAX_IMAGES);
+    }
+  } catch {
+    // Fall through to legacy image_url fallback
+  }
+
+  if (typeof fallbackImageUrl === "string" && fallbackImageUrl.length > 0) {
+    return [fallbackImageUrl];
+  }
+
+  return [];
+}
 
 // ── Auth middleware ────────────────────────────────────────────────────────────
 function requireAuth(req, res, next) {
@@ -72,8 +96,12 @@ function requireAuth(req, res, next) {
 }
 
 function normalizeItem(item) {
+  const imageUrls = parseImageUrls(item.imageUrlsJson, item.imageUrl);
+
   return {
     ...item,
+    imageUrl: imageUrls[0] || item.imageUrl,
+    imageUrls,
     price: Number(item.price),
     salePrice: item.salePrice == null ? null : Number(item.salePrice),
     onSale: Boolean(item.onSale),
@@ -89,7 +117,7 @@ app.get("/health", (_req, res) => {
 app.get("/api/items", async (_req, res) => {
   try {
     const items = await runQuery(
-      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl,
+      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
               price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
        WHERE status = 'published'
@@ -99,6 +127,35 @@ app.get("/api/items", async (_req, res) => {
   } catch (error) {
     console.error("Failed to fetch items", error);
     res.status(500).json({ error: "Failed to fetch items" });
+  }
+});
+
+app.get("/api/items/:id", async (req, res) => {
+  const itemId = Number(req.params.id);
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    res.status(400).json({ error: "Invalid item id" });
+    return;
+  }
+
+  try {
+    const [item] = await runQuery(
+      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
+              price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
+       FROM items
+       WHERE id = ? AND status = 'published'
+       LIMIT 1`,
+      [itemId]
+    );
+
+    if (!item) {
+      res.status(404).json({ error: "Item not found" });
+      return;
+    }
+
+    res.json({ item: normalizeItem(item) });
+  } catch (error) {
+    console.error("Failed to fetch item", error);
+    res.status(500).json({ error: "Failed to fetch item" });
   }
 });
 
@@ -141,7 +198,7 @@ app.post("/api/admin/login", async (req, res) => {
 app.get("/api/admin/items", requireAuth, async (_req, res) => {
   try {
     const items = await runQuery(
-      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl,
+      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl, image_urls_json AS imageUrlsJson,
               price, on_sale AS onSale, sale_price AS salePrice, is_featured AS isFeatured, status, created_at AS createdAt
        FROM items
        ORDER BY created_at DESC`
@@ -165,15 +222,16 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
 
   try {
     const result = await runQuery(
-      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, price, on_sale, sale_price, is_featured, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, image_urls_json, price, on_sale, sale_price, is_featured, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.nameEn,
         payload.nameAr,
         payload.category,
         payload.descEn,
         payload.descAr,
-        payload.imageUrl,
+        payload.imageUrls[0],
+        JSON.stringify(payload.imageUrls),
         payload.price,
         payload.onSale,
         payload.onSale ? payload.salePrice : null,
@@ -185,6 +243,57 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Failed to create item", error);
     res.status(500).json({ error: "Failed to create item" });
+  }
+});
+
+app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
+  const itemId = Number(req.params.id);
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    res.status(400).json({ error: "Invalid item id" });
+    return;
+  }
+
+  const parsed = productSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid payload", issues: parsed.error.issues });
+    return;
+  }
+
+  const payload = parsed.data;
+
+  try {
+    const result = await runQuery(
+      `UPDATE items
+       SET name_en = ?, name_ar = ?, category = ?, desc_en = ?, desc_ar = ?, image_url = ?, image_urls_json = ?,
+           price = ?, on_sale = ?, sale_price = ?, is_featured = ?, status = ?
+       WHERE id = ?`,
+      [
+        payload.nameEn,
+        payload.nameAr,
+        payload.category,
+        payload.descEn,
+        payload.descAr,
+        payload.imageUrls[0],
+        JSON.stringify(payload.imageUrls),
+        payload.price,
+        payload.onSale,
+        payload.onSale ? payload.salePrice : null,
+        payload.isFeatured,
+        payload.status,
+        itemId,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "Item not found" });
+      return;
+    }
+
+    res.status(200).json({ id: itemId });
+  } catch (error) {
+    console.error("Failed to update item", error);
+    res.status(500).json({ error: "Failed to update item" });
   }
 });
 

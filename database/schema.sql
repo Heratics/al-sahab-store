@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS items (
   desc_en TEXT NOT NULL,
   desc_ar TEXT NOT NULL,
   image_url VARCHAR(500) NOT NULL,
+  image_urls_json LONGTEXT NULL,
   price DECIMAL(10,2) NOT NULL,
   on_sale TINYINT(1) NOT NULL DEFAULT 0,
   sale_price DECIMAL(10,2) NULL,
@@ -29,6 +30,11 @@ CREATE TABLE IF NOT EXISTS items (
 
 -- Run this on existing databases that already have the items table:
 ALTER TABLE items
+  ADD COLUMN IF NOT EXISTS image_urls_json LONGTEXT NULL,
   ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   ADD COLUMN IF NOT EXISTS on_sale TINYINT(1) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS sale_price DECIMAL(10,2) NULL;
+
+UPDATE items
+SET image_urls_json = JSON_ARRAY(image_url)
+WHERE image_urls_json IS NULL OR image_urls_json = '';
