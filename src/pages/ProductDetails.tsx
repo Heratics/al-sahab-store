@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { getStoreItemById, getStoreItems } from "@/lib/api";
@@ -45,6 +45,18 @@ export default function ProductDetails() {
       ? [itemQuery.data.imageUrl]
       : [];
 
+  const showImageArrows = currentImages.length > 1;
+
+  const goToPrevImage = () => {
+    if (!currentImages.length) return;
+    setActiveImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length);
+  };
+
+  const goToNextImage = () => {
+    if (!currentImages.length) return;
+    setActiveImageIndex((prev) => (prev + 1) % currentImages.length);
+  };
+
   useEffect(() => {
     setActiveImageIndex(0);
   }, [id]);
@@ -73,12 +85,33 @@ export default function ProductDetails() {
           <section className="space-y-12">
             <div className="grid lg:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <div className="rounded-2xl overflow-hidden border border-border bg-card">
+                <div className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-square">
                   <img
                     src={currentImages[activeImageIndex] || itemQuery.data.imageUrl}
                     alt={itemQuery.data.nameEn}
-                    className="w-full h-full object-cover min-h-90"
+                    className="w-full h-full object-cover"
                   />
+
+                  {showImageArrows ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={goToPrevImage}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToNextImage}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  ) : null}
                 </div>
                 {currentImages.length > 1 ? (
                   <div className="grid grid-cols-5 gap-2">

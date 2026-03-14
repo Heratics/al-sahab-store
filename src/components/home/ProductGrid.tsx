@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { ShoppingBag, Star, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { getStoreItems } from '@/lib/api';
 
 const fallbackGradients = [
@@ -16,18 +17,54 @@ const fallbackGradients = [
   'gradient-product-9',
 ];
 
-export function ProductGrid() {
+type ProductGridProps = {
+  selectedCategory: string | null;
+  onCategoryChange: (category: string | null) => void;
+};
+
+export function ProductGrid({ selectedCategory, onCategoryChange }: ProductGridProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [imageIndexByItem, setImageIndexByItem] = useState<Record<number, number>>({});
+
   const { data: items = [], isLoading, isError } = useQuery({
     queryKey: ['store-items'],
     queryFn: getStoreItems,
   });
+
+  const filteredItems = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return items.filter((item) => {
+      if (selectedCategory && item.category !== selectedCategory) return false;
+      if (!query) return true;
+
+      return [item.nameEn, item.nameAr, item.descEn, item.descAr, item.category]
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [items, searchTerm, selectedCategory]);
+
+  const getCurrentImage = (product: (typeof items)[number]) => {
+    const images = product.imageUrls?.length ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
+    if (!images.length) return null;
+    const activeIndex = imageIndexByItem[product.id] ?? 0;
+    return images[activeIndex % images.length];
+  };
+
+  const changeImage = (productId: number, totalImages: number, direction: -1 | 1) => {
+    setImageIndexByItem((prev) => {
+      const current = prev[productId] ?? 0;
+      const next = (current + direction + totalImages) % totalImages;
+      return { ...prev, [productId]: next };
+    });
+  };
 
   return (
     <section id="featured" className="py-24 bg-background relative border-y border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Star className="w-5 h-5 text-accent fill-accent" />
@@ -40,9 +77,31 @@ export function ProductGrid() {
               المنتجات المميزة
             </p>
           </div>
-          <button className="hidden md:flex px-6 py-2.5 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors items-center gap-2">
-            View All Store Items
-          </button>
+          {selectedCategory ? (
+            <button
+              type="button"
+              onClick={() => onCategoryChange(null)}
+              className="hidden md:flex px-6 py-2.5 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors items-center gap-2"
+            >
+              Clear Category Filter
+            </button>
+          ) : null}
+        </div>
+
+        <div className="mb-8 grid md:grid-cols-[1fr_auto] gap-3 items-center">
+          <label className="relative block">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search products by name, description, or category"
+              className="w-full rounded-xl border border-input bg-card pl-10 pr-3 py-2.5"
+            />
+          </label>
+          <p className="text-sm text-muted-foreground md:text-right">
+            Showing {filteredItems.length} of {items.length} items
+            {selectedCategory ? ` in ${selectedCategory}` : ''}
+          </p>
         </div>
 
         {/* Grid */}
@@ -60,82 +119,121 @@ export function ProductGrid() {
             <p className="arabic-text text-lg text-muted-foreground mt-2">نعتذر، المنتجات غير متوفرة حالياً</p>
             <p className="text-sm text-muted-foreground mt-3">Please check back soon for new arrivals.</p>
           </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-10 text-center">
+            <h4 className="text-2xl font-display font-bold text-foreground">No matching products found.</h4>
+            <p className="text-sm text-muted-foreground mt-3">Try another search term or clear the category filter.</p>
+          </div>
         ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-          {items.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              className="group flex flex-col"
-            >
-              <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-md transition-shadow">
-                {(product.imageUrls?.[0] || product.imageUrl) ? (
-                  <img
-                    src={product.imageUrls?.[0] || product.imageUrl}
-                    alt={product.nameEn}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                ) : (
-                  <>
-                    <div className={`absolute inset-0 w-full h-full ${fallbackGradients[index % fallbackGradients.length]} mix-blend-multiply opacity-80 group-hover:scale-105 transition-transform duration-700`}></div>
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                    <div className="absolute inset-x-8 top-8 bottom-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/50 shadow-inner flex items-center justify-center">
-                      <ShoppingBag className="w-12 h-12 text-white/50" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+            {filteredItems.map((product, index) => {
+            const productImages = product.imageUrls?.length ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
+            const currentImage = getCurrentImage(product);
+            const hasImageCarousel = productImages.length > 1;
+
+            return (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                className="group flex flex-col"
+              >
+                <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-md transition-shadow">
+                  {currentImage ? (
+                    <img
+                      src={currentImage}
+                      alt={product.nameEn}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <>
+                      <div className={`absolute inset-0 w-full h-full ${fallbackGradients[index % fallbackGradients.length]} mix-blend-multiply opacity-80 group-hover:scale-105 transition-transform duration-700`}></div>
+                      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                      <div className="absolute inset-x-8 top-8 bottom-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/50 shadow-inner flex items-center justify-center">
+                        <ShoppingBag className="w-12 h-12 text-white/50" />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur text-xs font-semibold text-foreground rounded-full shadow-sm">
+                    {product.category}
+                  </div>
+                  {product.onSale ? (
+                    <div className="absolute top-3 right-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm">
+                      Sale
                     </div>
-                  </>
-                )}
+                  ) : null}
 
-                <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur text-xs font-semibold text-foreground rounded-full shadow-sm">
-                  {product.category}
+                  {hasImageCarousel ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => changeImage(product.id, productImages.length, -1)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changeImage(product.id, productImages.length, 1)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : null}
                 </div>
-                {product.onSale ? (
-                  <div className="absolute top-3 right-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm">
-                    Sale
-                  </div>
-                ) : null}
-              </div>
 
-              <div className="grow flex flex-col px-1">
-                <h4 className="font-bold text-lg text-foreground leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                  {product.nameEn}
-                </h4>
-                <h5 className="arabic-text text-base text-muted-foreground mb-2 line-clamp-1">
-                  {product.nameAr}
-                </h5>
-                <p className="text-sm text-foreground/70 mb-4 line-clamp-2">
-                  {product.descEn}
-                </p>
-                
-                <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground uppercase font-semibold">Price</span>
-                    {product.onSale && product.salePrice != null ? (
-                      <span className="font-bold text-lg text-primary">
-                        ${Number(product.salePrice).toFixed(2)}
-                        <span className="ml-2 text-sm text-muted-foreground line-through">${Number(product.price).toFixed(2)}</span>
-                      </span>
-                    ) : (
-                      <span className="font-bold text-lg text-foreground">${Number(product.price).toFixed(2)}</span>
-                    )}
+                <div className="grow flex flex-col px-1">
+                  <h4 className="font-bold text-lg text-foreground leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                    {product.nameEn}
+                  </h4>
+                  <h5 className="arabic-text text-base text-muted-foreground mb-2 line-clamp-1">
+                    {product.nameAr}
+                  </h5>
+                  <p className="text-sm text-foreground/70 mb-4 line-clamp-2">
+                    {product.descEn}
+                  </p>
+
+                  <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground uppercase font-semibold">Price</span>
+                      {product.onSale && product.salePrice != null ? (
+                        <span className="font-bold text-lg text-primary">
+                          ${Number(product.salePrice).toFixed(2)}
+                          <span className="ml-2 text-sm text-muted-foreground line-through">${Number(product.price).toFixed(2)}</span>
+                        </span>
+                      ) : (
+                        <span className="font-bold text-lg text-foreground">${Number(product.price).toFixed(2)}</span>
+                      )}
+                    </div>
+                    <Link
+                      href={`/item/${product.id}`}
+                      className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
                   </div>
-                  <Link
-                    href={`/item/${product.id}`}
-                    className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors"
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            );
+            })}
+          </div>
         )}
 
         <div className="mt-12 text-center md:hidden">
-          <button className="w-full py-3 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors">
+          <button
+            type="button"
+            onClick={() => {
+              onCategoryChange(null);
+              setSearchTerm('');
+            }}
+            className="w-full py-3 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors"
+          >
             View All Store Items
           </button>
         </div>
