@@ -6,7 +6,7 @@ export function Footer() {
   const { t, isArabic } = useUiPreferences();
 
   return (
-    <footer className="bg-foreground text-white pt-16 pb-8 relative overflow-hidden">
+    <footer className="bg-[hsl(350_52%_16%)] text-white dark:bg-[hsl(350_60%_12%)] pt-16 pb-8 relative overflow-hidden border-t border-white/10 dark:border-[hsl(350_60%_20%)]">
       {/* Decorative subtle pattern overlay */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}images/pattern.png)`, backgroundSize: '200px' }}></div>
       
