@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Loader2, ShieldCheck } from "lucide-react";
+import { Save, Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { createStoreItem, getAdminItems } from "@/lib/api";
 import { adminLogin } from "@/lib/api";
 import { LogIn, LogOut } from "lucide-react";
@@ -201,6 +201,7 @@ function LoginScreen({ onSuccess }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const loginMutation = useMutation({
     mutationFn: () => adminLogin(username, password),
@@ -241,14 +242,24 @@ function LoginScreen({ onSuccess }) {
 
         <label className="block">
           <span className="text-sm font-semibold">Password</span>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            required
-            autoComplete="current-password"
-            className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2"
-          />
+          <div className="mt-1 relative">
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </label>
 
         {error && <p className="text-sm text-destructive">{error}</p>}

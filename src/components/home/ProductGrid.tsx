@@ -53,6 +53,12 @@ export function ProductGrid() {
           <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center text-destructive">
             Failed to load items. Check your API/database connection.
           </div>
+        ) : items.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-10 text-center">
+            <h4 className="text-2xl font-display font-bold text-foreground">Sorry, we're out of stock right now.</h4>
+            <p className="arabic-text text-lg text-muted-foreground mt-2">نعتذر، المنتجات غير متوفرة حالياً</p>
+            <p className="text-sm text-muted-foreground mt-3">Please check back soon for new arrivals.</p>
+          </div>
         ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
           {items.map((product, index) => (
