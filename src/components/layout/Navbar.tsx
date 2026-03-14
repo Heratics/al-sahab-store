@@ -6,7 +6,7 @@ import { useUiPreferences } from '@/lib/ui-preferences';
 
 export function Navbar() {
   const [, setLocation] = useLocation();
-  const { language, setLanguage, theme, toggleTheme, t, isArabic } = useUiPreferences();
+  const { language, setLanguage, theme, setTheme, t, isArabic } = useUiPreferences();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -151,15 +151,25 @@ export function Navbar() {
             {settingsOpen ? (
               <div className="absolute top-12 right-0 w-60 rounded-xl border border-border bg-card shadow-lg p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{t('Dark Mode', 'الوضع الداكن')}</span>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="inline-flex items-center gap-2 rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted/50"
-                  >
-                    {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                    {theme === 'dark' ? t('On', 'مفعل') : t('Off', 'مغلق')}
-                  </button>
+                  <span className="text-sm font-medium">{t('Theme', 'المظهر')}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTheme('light')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${theme === 'light' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      <Sun className="w-3.5 h-3.5" />
+                      {t('Light', 'فاتح')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme('dark')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${theme === 'dark' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      <Moon className="w-3.5 h-3.5" />
+                      {t('Dark', 'داكن')}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -237,15 +247,25 @@ export function Navbar() {
 
               <div className="space-y-2 rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{t('Dark Mode', 'الوضع الداكن')}</span>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="inline-flex items-center gap-2 rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted/50"
-                  >
-                    {theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-                    {theme === 'dark' ? t('On', 'مفعل') : t('Off', 'مغلق')}
-                  </button>
+                  <span className="text-sm font-medium">{t('Theme', 'المظهر')}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTheme('light')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${theme === 'light' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      <Sun className="w-3.5 h-3.5" />
+                      {t('Light', 'فاتح')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme('dark')}
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${theme === 'dark' ? 'border-primary bg-primary text-white' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      <Moon className="w-3.5 h-3.5" />
+                      {t('Dark', 'داكن')}
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button

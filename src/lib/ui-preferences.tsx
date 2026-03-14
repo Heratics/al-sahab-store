@@ -33,8 +33,12 @@ export function UiPreferencesProvider({ children }: { children: React.ReactNode 
   }, [language]);
 
   useEffect(() => {
+    const isDark = theme === 'dark';
+
     localStorage.setItem('ui-theme', theme);
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.toggle('dark', isDark);
+    document.body.classList.toggle('dark', isDark);
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
   }, [theme]);
 
   const value = useMemo<UiPreferencesContextValue>(() => ({

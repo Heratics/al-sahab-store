@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { getStoreItems } from '@/lib/api';
 import { useUiPreferences } from '@/lib/ui-preferences';
 
@@ -28,6 +28,7 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
   const { isArabic, t } = useUiPreferences();
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [imageIndexByItem, setImageIndexByItem] = useState<Record<number, number>>({});
+  const [expandedImage, setExpandedImage] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
     setSearchTerm(initialSearchTerm);
@@ -147,11 +148,18 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
               >
                 <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-md transition-shadow">
                   {currentImage ? (
-                    <img
-                      src={currentImage}
-                      alt={product.nameEn}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setExpandedImage({ src: currentImage, alt: product.nameEn })}
+                      className="w-full h-full"
+                      aria-label={t('Open image', 'فتح الصورة')}
+                    >
+                      <img
+                        src={currentImage}
+                        alt={product.nameEn}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </button>
                   ) : (
                     <>
                       <div className={`absolute inset-0 w-full h-full ${fallbackGradients[index % fallbackGradients.length]} mix-blend-multiply opacity-80 group-hover:scale-105 transition-transform duration-700`}></div>
@@ -175,7 +183,10 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                     <>
                       <button
                         type="button"
-                        onClick={() => changeImage(product.id, productImages.length, -1)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          changeImage(product.id, productImages.length, -1);
+                        }}
                         className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
                         aria-label="Previous image"
                       >
@@ -183,7 +194,10 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
                       </button>
                       <button
                         type="button"
-                        onClick={() => changeImage(product.id, productImages.length, 1)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          changeImage(product.id, productImages.length, 1);
+                        }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/60 text-foreground backdrop-blur-sm hover:bg-white/85 transition-colors flex items-center justify-center"
                         aria-label="Next image"
                       >
@@ -242,6 +256,24 @@ export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchT
             {t('View All Store Items', 'عرض كل المنتجات')}
           </button>
         </div>
+
+        {expandedImage ? (
+          <div className="fixed inset-0 z-[70] bg-black/90 p-4 sm:p-8 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setExpandedImage(null)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors flex items-center justify-center"
+              aria-label={t('Close image', 'اغلاق الصورة')}
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img
+              src={expandedImage.src}
+              alt={expandedImage.alt}
+              className="max-w-full max-h-[85vh] object-contain rounded-xl"
+            />
+          </div>
+        ) : null}
       </div>
     </section>
   );

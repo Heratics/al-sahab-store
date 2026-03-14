@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { getStoreItemById, getStoreItems } from "@/lib/api";
@@ -23,6 +23,7 @@ export default function ProductDetails() {
   const [location] = useLocation();
   const id = Number(location.split("/").pop() ?? NaN);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
 
   const itemQuery = useQuery({
     queryKey: ["store-item", id],
@@ -61,6 +62,7 @@ export default function ProductDetails() {
 
   useEffect(() => {
     setActiveImageIndex(0);
+    setIsImageExpanded(false);
   }, [id]);
 
   return (
@@ -88,11 +90,18 @@ export default function ProductDetails() {
             <div className="grid lg:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <div className="relative rounded-2xl overflow-hidden border border-border bg-card aspect-square">
-                  <img
-                    src={currentImages[activeImageIndex] || itemQuery.data.imageUrl}
-                    alt={itemQuery.data.nameEn}
-                    className="w-full h-full object-cover"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsImageExpanded(true)}
+                    className="w-full h-full"
+                    aria-label={t('Open image', 'فتح الصورة')}
+                  >
+                    <img
+                      src={currentImages[activeImageIndex] || itemQuery.data.imageUrl}
+                      alt={itemQuery.data.nameEn}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
 
                   {showImageArrows ? (
                     <>
@@ -189,6 +198,25 @@ export default function ProductDetails() {
           </section>
         )}
       </main>
+
+      {itemQuery.data && isImageExpanded ? (
+        <div className="fixed inset-0 z-70 bg-black/90 p-4 sm:p-8 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setIsImageExpanded(false)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors flex items-center justify-center"
+            aria-label={t('Close image', 'اغلاق الصورة')}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={currentImages[activeImageIndex] || itemQuery.data.imageUrl}
+            alt={itemQuery.data.nameEn}
+            className="max-w-full max-h-[85vh] object-contain rounded-xl"
+          />
+        </div>
+      ) : null}
+
       <Footer />
     </div>
   );

@@ -12,9 +12,20 @@ type CategoryGridProps = {
 export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSelected = false }: CategoryGridProps) {
   const { isArabic, t } = useUiPreferences();
 
-  const pickCategory = (category: string) => {
+  const scrollToFeatured = () => {
+    const featured = document.getElementById('featured');
+    if (!featured) return;
+
+    const navbarOffset = 112;
+    const targetTop = featured.getBoundingClientRect().top + window.scrollY - navbarOffset;
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+  };
+
+  const pickCategory = (category: string | null) => {
     onSelectCategory(category);
-    document.getElementById('featured')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(scrollToFeatured);
+    });
   };
 
   if (compactWhenSelected && activeCategory) {
@@ -24,7 +35,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <button
               type="button"
-              onClick={() => onSelectCategory(null)}
+              onClick={() => pickCategory(null)}
               className="shrink-0 rounded-full border border-primary bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold"
             >
               {t('All Categories', 'كل الاقسام')}
@@ -33,7 +44,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => onSelectCategory(cat.nameEn)}
+                onClick={() => pickCategory(cat.nameEn)}
                 className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                   activeCategory === cat.nameEn
                     ? 'border-primary bg-primary text-primary-foreground'
@@ -100,7 +111,7 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
                 <h4 className="text-xl font-bold text-foreground mb-1 group-hover:text-primary transition-colors">{isArabic ? cat.nameAr : cat.nameEn}</h4>
                 <h5 className="arabic-text text-lg text-muted-foreground mb-3">{isArabic ? cat.nameEn : cat.nameAr}</h5>
                 
-                <p className="text-sm text-muted-foreground mb-6 flex-grow">{cat.description}</p>
+                <p className="text-sm text-muted-foreground mb-6 grow">{cat.description}</p>
                 
                 <div className="mt-auto flex items-center text-sm font-semibold text-primary opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                   {t('View Items', 'عرض المنتجات')} <ArrowRight className="w-4 h-4 ml-1" />
@@ -116,15 +127,12 @@ export function CategoryGrid({ activeCategory, onSelectCategory, compactWhenSele
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: categories.length * 0.1 }}
           >
-            <div className="h-full bg-gradient-to-br from-primary to-primary/90 rounded-2xl p-6 text-white flex flex-col justify-center items-center text-center shadow-lg shadow-primary/20 hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="h-full bg-linear-to-br from-primary to-primary/90 rounded-2xl p-6 text-white flex flex-col justify-center items-center text-center shadow-lg shadow-primary/20 hover:shadow-xl transition-all hover:-translate-y-1">
               <h4 className="text-2xl font-display font-bold mb-2">{t('And Much More!', 'والمزيد بانتظاركم')}</h4>
               <p className="arabic-text text-xl mb-4 text-white/90">{t('Discover more categories', 'اكتشف المزيد من الاقسام')}</p>
               <button
                 type="button"
-                onClick={() => {
-                  onSelectCategory(null);
-                  document.getElementById('featured')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
+                onClick={() => pickCategory(null)}
                 className="px-6 py-2.5 bg-white text-primary rounded-full font-semibold text-sm hover:bg-accent hover:text-foreground transition-colors"
               >
                 {t('See Featured Items', 'عرض المنتجات المميزة')}
