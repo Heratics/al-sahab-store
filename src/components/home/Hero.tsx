@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'wouter';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 
 export function Hero() {
@@ -52,21 +53,21 @@ export function Hero() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
-                <a 
-                  href="#categories"
+                <Link
+                  href="/catalog"
                   className="px-8 py-4 rounded-full bg-primary text-white font-semibold text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 hover:bg-primary/95 transition-all duration-300 flex items-center gap-2 group"
                 >
                   <ShoppingBag className="w-5 h-5" />
                   <span>Browse Categories</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </a>
-                <a 
-                  href="#about"
+                </Link>
+                <Link
+                  href="/about"
                   className="px-8 py-4 rounded-full bg-white text-foreground font-semibold text-lg shadow-md border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
                 >
                   <span>Visit Store</span>
                   <span className="arabic-text text-primary text-sm">زيارة المعرض</span>
-                </a>
+                </Link>
               </div>
             </motion.div>
           </div>

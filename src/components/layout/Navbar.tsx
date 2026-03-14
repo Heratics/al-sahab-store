@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'wouter';
-import { Menu, X, Phone, MapPin } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
+import { Menu, X, Phone, MapPin, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function Navbar() {
+  const [, setLocation] = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,11 +18,24 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { name: 'Home', href: '#home', ar: 'الرئيسية' },
-    { name: 'Categories', href: '#categories', ar: 'الأقسام' },
-    { name: 'Featured', href: '#featured', ar: 'المميزة' },
-    { name: 'About', href: '#about', ar: 'من نحن' },
+    { name: 'Home', href: '/', ar: 'الرئيسية' },
+    { name: 'Catalog', href: '/catalog', ar: 'الأقسام والمنتجات' },
+    { name: 'About', href: '/about', ar: 'من نحن' },
   ];
+
+  const runCatalogSearch = () => {
+    const query = searchInput.trim();
+    const target = query ? `/catalog?q=${encodeURIComponent(query)}` : '/catalog';
+    setLocation(target);
+    setMobileMenuOpen(false);
+  };
+
+  const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      runCatalogSearch();
+    }
+  };
 
   return (
     <header 
@@ -50,9 +65,9 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a 
+              <Link
                 key={link.name} 
                 href={link.href}
                 className="group relative flex flex-col items-center py-2"
@@ -64,9 +79,27 @@ export function Navbar() {
                   {link.ar}
                 </span>
                 <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full group-hover:left-0 rounded-full" />
-              </a>
+              </Link>
             ))}
           </nav>
+
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-border bg-white/80 backdrop-blur px-2 py-1 w-[320px]">
+            <Search className="w-4 h-4 text-muted-foreground ml-2" />
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={onSearchKeyDown}
+              placeholder="Search products..."
+              className="flex-1 bg-transparent text-sm outline-none"
+            />
+            <button
+              type="button"
+              onClick={runCatalogSearch}
+              className="px-3 py-1.5 rounded-full bg-primary text-white text-xs font-semibold hover:opacity-90"
+            >
+              Search
+            </button>
+          </div>
 
           {/* Contact / CTA Desktop */}
           <div className="hidden md:flex items-center gap-4">
@@ -79,13 +112,13 @@ export function Navbar() {
             >
               <MapPin className="w-5 h-5" />
             </a>
-            <a 
-              href="#about"
+            <Link
+              href="/about"
               className="px-5 py-2.5 rounded-full bg-primary text-white font-medium text-sm hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2"
             >
               <Phone className="w-4 h-4" />
               <span>Contact Us</span>
-            </a>
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -108,8 +141,26 @@ export function Navbar() {
             className="md:hidden bg-white border-t border-border/50 shadow-xl overflow-hidden"
           >
             <div className="px-4 py-6 flex flex-col gap-4">
+              <div className="flex items-center gap-2 rounded-xl border border-border px-2 py-1.5">
+                <Search className="w-4 h-4 text-muted-foreground ml-1" />
+                <input
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={onSearchKeyDown}
+                  placeholder="Search products..."
+                  className="flex-1 bg-transparent text-sm outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={runCatalogSearch}
+                  className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold"
+                >
+                  Go
+                </button>
+              </div>
+
               {navLinks.map((link) => (
-                <a 
+                <Link
                   key={link.name} 
                   href={link.href}
                   className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors"
@@ -117,17 +168,17 @@ export function Navbar() {
                 >
                   <span className="font-medium text-foreground">{link.name}</span>
                   <span className="arabic-text text-primary font-bold">{link.ar}</span>
-                </a>
+                </Link>
               ))}
               <div className="h-px bg-border/50 my-2" />
-              <a 
-                href="#about"
+              <Link
+                href="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 rounded-xl bg-primary text-white font-medium flex items-center justify-center gap-2 shadow-md"
               >
                 <Phone className="w-5 h-5" />
                 <span>Contact Us / اتصل بنا</span>
-              </a>
+              </Link>
             </div>
           </motion.div>
         )}

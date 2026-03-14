@@ -1,3 +1,4 @@
+import { Link } from 'wouter';
 import { MapPin, Phone, Clock, Instagram, Facebook, MessageCircle } from 'lucide-react';
 
 export function Footer() {
@@ -47,14 +48,24 @@ export function Footer() {
               <span className="arabic-text text-accent text-sm font-normal">روابط سريعة</span>
             </h4>
             <ul className="space-y-3">
-              {['Home', 'Categories', 'Featured Products', 'About Us', 'Contact'].map((item) => (
-                <li key={item}>
-                  <a href={`#${item.split(' ')[0].toLowerCase()}`} className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
-                    {item}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <Link href="/" className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/catalog" className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
+                  Categories & Products
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-white/70 hover:text-accent transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-accent transition-colors" />
+                  About Us
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { ShoppingBag, Star, ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide-react';
@@ -20,11 +20,16 @@ const fallbackGradients = [
 type ProductGridProps = {
   selectedCategory: string | null;
   onCategoryChange: (category: string | null) => void;
+  initialSearchTerm?: string;
 };
 
-export function ProductGrid({ selectedCategory, onCategoryChange }: ProductGridProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export function ProductGrid({ selectedCategory, onCategoryChange, initialSearchTerm = '' }: ProductGridProps) {
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [imageIndexByItem, setImageIndexByItem] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    setSearchTerm(initialSearchTerm);
+  }, [initialSearchTerm]);
 
   const { data: items = [], isLoading, isError } = useQuery({
     queryKey: ['store-items'],
