@@ -1,0 +1,25 @@
+USE alshaebstore;
+
+CREATE TABLE IF NOT EXISTS admin_users (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  username VARCHAR(60) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS items (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name_en VARCHAR(120) NOT NULL,
+  name_ar VARCHAR(120) NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  desc_en TEXT NOT NULL,
+  desc_ar TEXT NOT NULL,
+  image_url VARCHAR(500) NOT NULL,
+  is_featured TINYINT(1) NOT NULL DEFAULT 1,
+  status ENUM('draft', 'published') NOT NULL DEFAULT 'published',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_items_status_featured_created (status, is_featured, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

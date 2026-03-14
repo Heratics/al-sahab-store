@@ -1,0 +1,176 @@
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { runQuery } from "./db.js";
+
+const app = express();
+const PORT = Number(process.env.PORT || 3000);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET environment variable is required");
+
+const productSchema = z.object({
+  nameEn: z.string().min(2).max(120),
+  nameAr: z.string().min(2).max(120),
+  category: z.string().min(2).max(80),
+  descEn: z.string().min(10).max(1000),
+  descAr: z.string().min(10).max(1000),
+  imageUrl: z.string().url().max(500),
+  isFeatured: z.boolean().optional().default(true),
+  status: z.enum(["draft", "published"]).optional().default("published"),
+});
+
+const corsOrigin = process.env.CORS_ORIGIN?.split(",").map((v) => v.trim()).filter(Boolean) || "*";
+app.use(cors({ origin: corsOrigin }));
+app.use(express.json({ limit: "1mb" }));
+
+// ── Auth middleware ────────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  const header = req.header("Authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.adminUser = payload;
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid or expired session" });
+  }
+}
+
+// ── Public routes ──────────────────────────────────────────────────────────────
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true, service: "al-sahab-store-api" });
+});
+
+app.get("/api/items", async (_req, res) => {
+  try {
+    const items = await runQuery(
+      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl,
+              is_featured AS isFeatured, status, created_at AS createdAt
+       FROM items
+       WHERE status = 'published'
+       ORDER BY is_featured DESC, created_at DESC`
+    );
+    res.json({ items });
+  } catch (error) {
+    console.error("Failed to fetch items", error);
+    res.status(500).json({ error: "Failed to fetch items" });
+  }
+});
+
+// ── Admin login ────────────────────────────────────────────────────────────────
+app.post("/api/admin/login", async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) {
+    res.status(400).json({ error: "username and password are required" });
+    return;
+  }
+
+  try {
+    const [user] = await runQuery(
+      "SELECT id, username, password_hash FROM admin_users WHERE username = ? LIMIT 1",
+      [username]
+    );
+
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      // Same message for both cases — don't reveal which part was wrong
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    const token = jwt.sign(
+      { sub: user.id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    res.json({ token });
+  } catch (error) {
+    console.error("Login error", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// ── Protected admin routes ─────────────────────────────────────────────────────
+app.get("/api/admin/items", requireAuth, async (_req, res) => {
+  try {
+    const items = await runQuery(
+      `SELECT id, name_en AS nameEn, name_ar AS nameAr, category, desc_en AS descEn, desc_ar AS descAr, image_url AS imageUrl,
+              is_featured AS isFeatured, status, created_at AS createdAt
+       FROM items
+       ORDER BY created_at DESC`
+    );
+    res.json({ items });
+  } catch (error) {
+    console.error("Failed to fetch admin items", error);
+    res.status(500).json({ error: "Failed to fetch admin items" });
+  }
+});
+
+app.post("/api/admin/items", requireAuth, async (req, res) => {
+  const parsed = productSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid payload", issues: parsed.error.issues });
+    return;
+  }
+
+  const payload = parsed.data;
+
+  try {
+    const result = await runQuery(
+      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, is_featured, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        payload.nameEn,
+        payload.nameAr,
+        payload.category,
+        payload.descEn,
+        payload.descAr,
+        payload.imageUrl,
+        payload.isFeatured,
+        payload.status,
+      ]
+    );
+    res.status(201).json({ id: result.insertId });
+  } catch (error) {
+    console.error("Failed to create item", error);
+    res.status(500).json({ error: "Failed to create item" });
+  }
+});
+
+if (process.env.NODE_ENV === "production") {
+  const staticDir = path.join(__dirname, "..", "dist", "public");
+  const appMode = process.env.APP_MODE || "all";
+  app.use(express.static(staticDir));
+
+  if (appMode === "admin") {
+    app.get("/", (_req, res) => {
+      res.sendFile(path.join(staticDir, "admin.html"));
+    });
+  } else if (appMode === "storefront") {
+    app.get("/", (_req, res) => {
+      res.sendFile(path.join(staticDir, "index.html"));
+    });
+  } else {
+    app.get(["/", "/admin"], (req, res) => {
+      const fileName = req.path === "/admin" ? "admin.html" : "index.html";
+      res.sendFile(path.join(staticDir, fileName));
+    });
+  }
+}
+
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});

@@ -1,0 +1,127 @@
+import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { ShoppingBag, Star, ArrowRight } from 'lucide-react';
+import { getStoreItems } from '@/lib/api';
+
+const fallbackGradients = [
+  'gradient-product-1',
+  'gradient-product-2',
+  'gradient-product-3',
+  'gradient-product-4',
+  'gradient-product-5',
+  'gradient-product-6',
+  'gradient-product-7',
+  'gradient-product-8',
+  'gradient-product-9',
+];
+
+export function ProductGrid() {
+  const { data: items = [], isLoading, isError } = useQuery({
+    queryKey: ['store-items'],
+    queryFn: getStoreItems,
+  });
+
+  return (
+    <section id="featured" className="py-24 bg-background relative border-y border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="w-5 h-5 text-accent fill-accent" />
+              <h2 className="text-sm font-bold tracking-widest text-primary uppercase">Staff Picks</h2>
+            </div>
+            <h3 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+              Featured Products
+            </h3>
+            <p className="arabic-text text-xl md:text-2xl font-bold text-muted-foreground mt-2">
+              المنتجات المميزة
+            </p>
+          </div>
+          <button className="hidden md:flex px-6 py-2.5 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors items-center gap-2">
+            View All Store Items
+          </button>
+        </div>
+
+        {/* Grid */}
+        {isLoading ? (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">
+            Loading store items...
+          </div>
+        ) : isError ? (
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8 text-center text-destructive">
+            Failed to load items. Check your API/database connection.
+          </div>
+        ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+          {items.map((product, index) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: index * 0.05 }}
+              className="group flex flex-col"
+            >
+              <div className="relative aspect-square w-full rounded-2xl overflow-hidden mb-4 shadow-sm group-hover:shadow-md transition-shadow">
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.nameEn}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                ) : (
+                  <>
+                    <div className={`absolute inset-0 w-full h-full ${fallbackGradients[index % fallbackGradients.length]} mix-blend-multiply opacity-80 group-hover:scale-105 transition-transform duration-700`}></div>
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                    <div className="absolute inset-x-8 top-8 bottom-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/50 shadow-inner flex items-center justify-center">
+                      <ShoppingBag className="w-12 h-12 text-white/50" />
+                    </div>
+                  </>
+                )}
+
+                <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur text-xs font-semibold text-foreground rounded-full shadow-sm">
+                  {product.category}
+                </div>
+              </div>
+
+              <div className="grow flex flex-col px-1">
+                <h4 className="font-bold text-lg text-foreground leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                  {product.nameEn}
+                </h4>
+                <h5 className="arabic-text text-base text-muted-foreground mb-2 line-clamp-1">
+                  {product.nameAr}
+                </h5>
+                <p className="text-sm text-foreground/70 mb-4 line-clamp-2">
+                  {product.descEn}
+                </p>
+                
+                <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                  {/* Price Placeholder */}
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground uppercase font-semibold">Price in Store</span>
+                    <span className="font-bold text-lg text-foreground">Visit Us</span>
+                  </div>
+                  <a 
+                    href="#about"
+                    className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        )}
+
+        <div className="mt-12 text-center md:hidden">
+          <button className="w-full py-3 rounded-full border-2 border-primary text-primary font-semibold hover:bg-primary hover:text-white transition-colors">
+            View All Store Items
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
