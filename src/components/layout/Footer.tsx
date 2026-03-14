@@ -116,7 +116,7 @@ export function Footer() {
           <p className="text-white/50 text-sm">
             &copy; {new Date().getFullYear()} {t('Al Sahab Store. All rights reserved.', 'متجر الشعب. جميع الحقوق محفوظة.')}
           </p>
-          <div className="flex gap-4 text-sm text-white/50">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-white/50">
             <a href="#" className="hover:text-white transition-colors">{t('Privacy Policy', 'سياسة الخصوصية')}</a>
             <a href="#" className="hover:text-white transition-colors">{t('Terms of Service', 'شروط الاستخدام')}</a>
           </div>

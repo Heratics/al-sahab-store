@@ -58,10 +58,10 @@ export function Hero() {
                 )}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 max-w-md sm:max-w-none">
                 <Link
                   href="/catalog"
-                  className="px-8 py-4 rounded-full bg-primary text-white font-semibold text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 hover:bg-primary/95 transition-all duration-300 flex items-center gap-2 group"
+                  className="w-full sm:w-auto justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-primary text-white font-semibold text-base sm:text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 hover:bg-primary/95 transition-all duration-300 flex items-center gap-2 group"
                 >
                   <ShoppingBag className="w-5 h-5" />
                   <span>{t('Browse Categories', 'تصفح الاقسام')}</span>
@@ -69,7 +69,7 @@ export function Hero() {
                 </Link>
                 <Link
                   href="/about"
-                  className="px-8 py-4 rounded-full bg-white text-foreground font-semibold text-lg shadow-md border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
+                  className="w-full sm:w-auto justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-white text-foreground font-semibold text-base sm:text-lg shadow-md border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center gap-2"
                 >
                   <span>{t('Visit Store', 'زيارة المعرض')}</span>
                   <span className="arabic-text text-primary text-sm">زيارة المعرض</span>

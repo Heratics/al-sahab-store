@@ -1,5 +1,7 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UiPreferencesProvider } from "@/lib/ui-preferences";
@@ -10,6 +12,17 @@ import ProductDetails from "@/pages/ProductDetails";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
+
+function RouteScrollManager() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    if (window.location.hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location]);
+
+  return null;
+}
 
 function Router() {
   return (
@@ -29,6 +42,7 @@ function App() {
       <UiPreferencesProvider>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <RouteScrollManager />
             <Router />
           </WouterRouter>
           <Toaster />

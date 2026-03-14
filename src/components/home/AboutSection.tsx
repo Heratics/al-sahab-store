@@ -77,11 +77,11 @@ export function AboutSection() {
                     href="https://www.google.com/maps/place/%D8%A8%D9%88%D8%A7%D8%A8%D8%A9+%D8%A7%D9%84%D8%B4%D8%B9%D8%A8+%D9%84%D9%84%D8%AA%D8%AE%D9%81%D9%8A%D8%B6%D8%A7%D8%AA+%D8%A7%D9%84%D8%B9%D9%82%D8%A8%D8%A9%E2%80%AD/@29.5550022,35.0240359,360m/data=!3m1!1e3!4m6!3m5!1s0x15006f00648a785d:0x87defb259c2dd3!8m2!3d29.554538!4d35.023887!16s%2Fg%2F11x989cn75"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 transition-all"
+                    className="inline-flex w-full sm:w-auto justify-center sm:justify-start items-center gap-2 px-5 sm:px-8 py-3 sm:py-4 bg-primary text-white rounded-2xl sm:rounded-full text-sm sm:text-base font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-1 transition-all"
                   >
                     <Navigation className="w-5 h-5" />
                     {t('Get Directions', 'احصل على الاتجاهات')}
-                    <span className="arabic-text text-sm border-l border-white/30 pl-2 ml-1">{t('Open map', 'افتح الخريطة')}</span>
+                    <span className="hidden sm:inline arabic-text text-sm border-l border-white/30 pl-2 ml-1">{t('Open map', 'افتح الخريطة')}</span>
                   </a>
                 </div>
               </motion.div>

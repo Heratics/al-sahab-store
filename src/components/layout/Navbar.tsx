@@ -70,7 +70,7 @@ export function Navbar() {
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 md:w-12 md:h-12 overflow-hidden rounded-xl shadow-md border border-primary/10 group-hover:shadow-lg transition-all">
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 overflow-hidden rounded-xl shadow-md border border-primary/10 group-hover:shadow-lg transition-all">
               <img 
                 src={`${import.meta.env.BASE_URL}store-logo.png`} 
                 alt="Al Sahab Logo" 
@@ -81,8 +81,8 @@ export function Navbar() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-bold text-xl md:text-2xl text-foreground leading-none tracking-tight">Al Sahab</span>
-              <span className="arabic-text font-bold text-primary text-sm md:text-base leading-none mt-1">الشعب</span>
+              <span className="font-display font-bold text-lg sm:text-xl md:text-2xl text-foreground leading-none tracking-tight">Al Sahab</span>
+              <span className="arabic-text font-bold text-primary text-xs sm:text-sm md:text-base leading-none mt-1">الشعب</span>
             </div>
           </Link>
 
