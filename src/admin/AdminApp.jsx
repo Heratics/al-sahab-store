@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, Loader2, ShieldCheck, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Save, Loader2, ShieldCheck, Eye, EyeOff, Trash2, Search, Minus, Plus } from "lucide-react";
 import { createStoreItem, deleteStoreItem, getAdminItems, updateStoreItem } from "@/lib/api";
 import { adminLogin } from "@/lib/api";
 import { LogIn, LogOut } from "lucide-react";
@@ -27,6 +27,7 @@ const defaultForm = {
   price: "",
   onSale: false,
   soldOut: false,
+  quantity: "1",
   salePrice: "",
   isFeatured: true,
   status: "published",
@@ -38,6 +39,8 @@ export default function AdminApp() {
   const [form, setForm] = useState(defaultForm);
   const [editingItemId, setEditingItemId] = useState(null);
   const [notice, setNotice] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   const itemsQuery = useQuery({
     queryKey: ["admin-items"],
@@ -92,8 +95,64 @@ export default function AdminApp() {
   });
 
   const onInput = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      if (field === "soldOut") {
+        const nextSoldOut = Boolean(value);
+        return {
+          ...prev,
+          soldOut: nextSoldOut,
+          quantity: nextSoldOut ? "0" : prev.quantity === "0" ? "1" : prev.quantity,
+        };
+      }
+
+      if (field === "quantity") {
+        const rawValue = String(value);
+        if (rawValue === "") {
+          return { ...prev, quantity: "", soldOut: false };
+        }
+
+        const parsedQuantity = Math.max(0, Number.parseInt(rawValue, 10) || 0);
+        return {
+          ...prev,
+          quantity: String(parsedQuantity),
+          soldOut: parsedQuantity === 0,
+        };
+      }
+
+      return { ...prev, [field]: value };
+    });
   };
+
+  const adjustQuantity = (delta) => {
+    setForm((prev) => {
+      const currentQuantity = Math.max(0, Number.parseInt(prev.quantity, 10) || 0);
+      const nextQuantity = Math.max(0, currentQuantity + delta);
+      return {
+        ...prev,
+        quantity: String(nextQuantity),
+        soldOut: nextQuantity === 0,
+      };
+    });
+  };
+
+  const filteredItems = useMemo(() => {
+    const items = itemsQuery.data || [];
+    const query = deferredSearchTerm.trim().toLowerCase();
+
+    if (!query) return items;
+
+    return items.filter((item) => {
+      const searchableParts = [
+        String(item.id),
+        item.nameEn,
+        item.nameAr,
+        item.category,
+        item.status,
+      ];
+
+      return searchableParts.some((part) => part.toLowerCase().includes(query));
+    });
+  }, [deferredSearchTerm, itemsQuery.data]);
 
   const onImageUrlInput = (index, value) => {
     setForm((prev) => {
@@ -154,10 +213,16 @@ export default function AdminApp() {
     }
 
     const price = Number(form.price);
+    const quantity = form.quantity === "" ? NaN : Number(form.quantity);
     const salePrice = form.onSale && form.salePrice !== "" ? Number(form.salePrice) : null;
 
     if (!Number.isFinite(price) || price <= 0) {
       setNotice("Please enter a valid base price.");
+      return;
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      setNotice("Please enter a valid quantity.");
       return;
     }
 
@@ -177,6 +242,8 @@ export default function AdminApp() {
       ...form,
       imageUrls,
       price,
+      quantity,
+      soldOut: quantity === 0 || form.soldOut,
       salePrice,
     };
 
@@ -295,7 +362,7 @@ export default function AdminApp() {
               </label>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <label className="block">
                 <span className="text-sm font-semibold">Base Price</span>
                 <input
@@ -307,6 +374,36 @@ export default function AdminApp() {
                   min="0.01"
                   className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2"
                 />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold">Quantity</span>
+                <div className="mt-1 flex items-center rounded-xl border border-input bg-background overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => adjustQuantity(-1)}
+                    className="h-11 w-11 inline-flex items-center justify-center border-r border-input hover:bg-muted/50 transition-colors"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    value={form.quantity}
+                    onChange={(e) => onInput("quantity", e.target.value)}
+                    required
+                    type="number"
+                    step="1"
+                    min="0"
+                    className="w-full bg-transparent px-3 py-2 text-center outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustQuantity(1)}
+                    className="h-11 w-11 inline-flex items-center justify-center border-l border-input hover:bg-muted/50 transition-colors"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </label>
               <label className="inline-flex items-center gap-2 font-medium mt-6">
                 <input
@@ -412,18 +509,35 @@ export default function AdminApp() {
           </form>
 
           <aside className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Latest Items</h2>
+            <div className="flex flex-col gap-4 mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-xl font-bold">Latest Items</h2>
+                <span className="text-xs text-muted-foreground">{filteredItems.length} shown</span>
+              </div>
+              <label className="relative block">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by name, category, status, or ID"
+                  className="w-full rounded-xl border border-input bg-background py-2 pl-9 pr-3"
+                />
+              </label>
+            </div>
             {itemsQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading items...</p>
             ) : itemsQuery.isError ? (
               <p className="text-sm text-destructive">{itemsQuery.error.message}</p>
+            ) : filteredItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items match that search.</p>
             ) : (
               <ul className="space-y-3 max-h-150 overflow-auto pr-1">
-                {(itemsQuery.data || []).map((item) => (
+                {filteredItems.map((item) => (
                   <li key={item.id} className="rounded-xl border border-border p-3 bg-background">
                     <p className="font-semibold">{item.nameEn}</p>
                     <p className="arabic-text text-sm text-muted-foreground">{item.nameAr}</p>
                     <p className="text-xs text-muted-foreground mt-1">{item.category} | {item.status}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Quantity: {item.quantity}</p>
                     <p className="text-sm mt-2">
                       {item.onSale && item.salePrice != null ? (
                         <>
@@ -451,6 +565,7 @@ export default function AdminApp() {
                           price: String(item.price),
                           onSale: item.onSale,
                           soldOut: item.soldOut,
+                          quantity: String(item.quantity),
                           salePrice: item.salePrice == null ? "" : String(item.salePrice),
                           isFeatured: item.isFeatured,
                           status: item.status,

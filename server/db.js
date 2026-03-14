@@ -8,7 +8,8 @@ const itemColumnDefinitions = {
   price: "ADD COLUMN price DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER image_urls_json",
   on_sale: "ADD COLUMN on_sale TINYINT(1) NOT NULL DEFAULT 0 AFTER price",
   sold_out: "ADD COLUMN sold_out TINYINT(1) NOT NULL DEFAULT 0 AFTER on_sale",
-  sale_price: "ADD COLUMN sale_price DECIMAL(10,2) NULL AFTER sold_out",
+  quantity: "ADD COLUMN quantity INT UNSIGNED NOT NULL DEFAULT 1 AFTER sold_out",
+  sale_price: "ADD COLUMN sale_price DECIMAL(10,2) NULL AFTER quantity",
   is_featured: "ADD COLUMN is_featured TINYINT(1) NOT NULL DEFAULT 1 AFTER sale_price",
   status: "ADD COLUMN status ENUM('draft', 'published') NOT NULL DEFAULT 'published' AFTER is_featured",
   updated_at: "ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
@@ -70,6 +71,22 @@ export async function ensureItemsSchema() {
          AND (image_urls_json IS NULL OR image_urls_json = '')`
     );
   }
+
+  if (!existingColumns.has("quantity") || missingDefinitions.length > 0) {
+    await runQuery(
+      `UPDATE items
+       SET quantity = CASE
+         WHEN sold_out = 1 THEN 0
+         WHEN quantity = 0 THEN 1
+         ELSE quantity
+       END`
+    );
+  }
+
+  await runQuery(
+    `UPDATE items
+     SET sold_out = CASE WHEN quantity = 0 THEN 1 ELSE 0 END`
+  );
 
   if (missingDefinitions.length > 0) {
     await getTableColumns("items", { refresh: true });

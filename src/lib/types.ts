@@ -10,6 +10,7 @@ export type StoreItem = {
   price: number;
   onSale: boolean;
   soldOut: boolean;
+  quantity: number;
   salePrice: number | null;
   isFeatured: boolean;
   status: "draft" | "published";
@@ -26,6 +27,7 @@ export type CreateStoreItemPayload = {
   price: number;
   onSale: boolean;
   soldOut: boolean;
+  quantity: number;
   salePrice: number | null;
   isFeatured: boolean;
   status: "draft" | "published";

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS items (
   price DECIMAL(10,2) NOT NULL,
   on_sale TINYINT(1) NOT NULL DEFAULT 0,
   sold_out TINYINT(1) NOT NULL DEFAULT 0,
+  quantity INT UNSIGNED NOT NULL DEFAULT 1,
   sale_price DECIMAL(10,2) NULL,
   is_featured TINYINT(1) NOT NULL DEFAULT 1,
   status ENUM('draft', 'published') NOT NULL DEFAULT 'published',
@@ -35,8 +36,21 @@ ALTER TABLE items
   ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   ADD COLUMN IF NOT EXISTS on_sale TINYINT(1) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS sold_out TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS quantity INT UNSIGNED NOT NULL DEFAULT 1,
   ADD COLUMN IF NOT EXISTS sale_price DECIMAL(10,2) NULL;
 
 UPDATE items
 SET image_urls_json = JSON_ARRAY(image_url)
 WHERE image_urls_json IS NULL OR image_urls_json = '';
+
+UPDATE items
+SET quantity = CASE
+  WHEN sold_out = 1 THEN 0
+  WHEN quantity = 0 THEN 1
+  ELSE quantity
+END
+WHERE id > 0;
+
+UPDATE items
+SET sold_out = CASE WHEN quantity = 0 THEN 1 ELSE 0 END
+WHERE id > 0;

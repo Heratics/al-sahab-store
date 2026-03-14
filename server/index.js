@@ -33,6 +33,7 @@ const productSchema = z.object({
   price: z.number().positive().max(99999999.99),
   onSale: z.boolean().optional().default(false),
   soldOut: z.boolean().optional().default(false),
+  quantity: z.number().int().min(0).max(999999).optional().default(1),
   salePrice: z.number().positive().max(99999999.99).nullable().optional(),
   isFeatured: z.boolean().optional().default(true),
   status: z.enum(["draft", "published"]).optional().default("published"),
@@ -56,6 +57,16 @@ const productSchema = z.object({
     }
   }
 });
+
+function normalizeInventoryPayload(payload) {
+  const quantity = payload.soldOut ? 0 : Math.max(0, Math.trunc(payload.quantity ?? 1));
+
+  return {
+    ...payload,
+    quantity,
+    soldOut: quantity === 0,
+  };
+}
 
 const corsOrigin = process.env.CORS_ORIGIN?.split(",").map((v) => v.trim()).filter(Boolean) || "*";
 app.use(cors({ origin: corsOrigin }));
@@ -98,15 +109,17 @@ function requireAuth(req, res, next) {
 
 function normalizeItem(item) {
   const imageUrls = parseImageUrls(item.imageUrlsJson, item.imageUrl);
+  const quantity = Math.max(0, Number(item.quantity ?? (item.soldOut ? 0 : 1)));
 
   return {
     ...item,
     imageUrl: imageUrls[0] || item.imageUrl,
     imageUrls,
     price: Number(item.price),
+    quantity,
     salePrice: item.salePrice == null ? null : Number(item.salePrice),
     onSale: Boolean(item.onSale),
-    soldOut: Boolean(item.soldOut),
+    soldOut: Boolean(item.soldOut) || quantity === 0,
     isFeatured: Boolean(item.isFeatured),
   };
 }
@@ -125,6 +138,7 @@ async function getItemsSelectConfig() {
     columns.has("price") ? "price" : "0.00 AS price",
     columns.has("on_sale") ? "on_sale AS onSale" : "0 AS onSale",
     columns.has("sold_out") ? "sold_out AS soldOut" : "0 AS soldOut",
+    columns.has("quantity") ? "quantity" : columns.has("sold_out") ? "CASE WHEN sold_out = 1 THEN 0 ELSE 1 END AS quantity" : "1 AS quantity",
     columns.has("sale_price") ? "sale_price AS salePrice" : "NULL AS salePrice",
     columns.has("is_featured") ? "is_featured AS isFeatured" : "1 AS isFeatured",
     columns.has("status") ? "status" : "'published' AS status",
@@ -247,13 +261,13 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
     return;
   }
 
-  const payload = parsed.data;
+  const payload = normalizeInventoryPayload(parsed.data);
 
   try {
     await ensureItemsSchema();
     const result = await runQuery(
-      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, image_urls_json, price, on_sale, sold_out, sale_price, is_featured, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO items (name_en, name_ar, category, desc_en, desc_ar, image_url, image_urls_json, price, on_sale, sold_out, quantity, sale_price, is_featured, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.nameEn,
         payload.nameAr,
@@ -265,6 +279,7 @@ app.post("/api/admin/items", requireAuth, async (req, res) => {
         payload.price,
         payload.onSale,
         payload.soldOut,
+        payload.quantity,
         payload.onSale ? payload.salePrice : null,
         payload.isFeatured,
         payload.status,
@@ -291,14 +306,14 @@ app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
     return;
   }
 
-  const payload = parsed.data;
+  const payload = normalizeInventoryPayload(parsed.data);
 
   try {
     await ensureItemsSchema();
     const result = await runQuery(
       `UPDATE items
        SET name_en = ?, name_ar = ?, category = ?, desc_en = ?, desc_ar = ?, image_url = ?, image_urls_json = ?,
-           price = ?, on_sale = ?, sold_out = ?, sale_price = ?, is_featured = ?, status = ?
+           price = ?, on_sale = ?, sold_out = ?, quantity = ?, sale_price = ?, is_featured = ?, status = ?
        WHERE id = ?`,
       [
         payload.nameEn,
@@ -311,6 +326,7 @@ app.put("/api/admin/items/:id", requireAuth, async (req, res) => {
         payload.price,
         payload.onSale,
         payload.soldOut,
+        payload.quantity,
         payload.onSale ? payload.salePrice : null,
         payload.isFeatured,
         payload.status,
