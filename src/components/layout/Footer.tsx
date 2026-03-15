@@ -38,10 +38,20 @@ export function Footer() {
               )}
             </p>
             <div className="flex gap-3 pt-2">
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all">
+              <a
+                href="https://www.facebook.com/nuts.alshaeb"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all"
+              >
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all">
+              <a
+                href="https://www.instagram.com/alshaebmall/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all"
+              >
                 <Instagram className="w-5 h-5" />
               </a>
             </div>
